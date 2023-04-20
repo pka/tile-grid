@@ -69,6 +69,7 @@ mod grid;
 mod grid_iterator;
 #[cfg(test)]
 mod grid_test;
+pub mod morecantile;
 
 pub use grid::{extent_wgs84_to_merc, Extent, ExtentInt, Grid, Origin, Unit};
 pub use grid_iterator::GridIterator;
