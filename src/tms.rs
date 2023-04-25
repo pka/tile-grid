@@ -1,8 +1,6 @@
-use crate::morecantile::commons::{BoundingBox, Coords, Tile};
-use crate::morecantile::transform::{Transform, Transformer, CRS};
-use crate::morecantile::utils::{
-    check_quadkey_support, meters_per_unit, point_in_bbox, DEFAULT_BBOX_PREC,
-};
+use crate::quadkey::{check_quadkey_support, meters_per_unit, point_in_bbox, DEFAULT_BBOX_PREC};
+use crate::tile::{BoundingBox, Coords, Tile};
+use crate::transform::{Transform, Transformer, CRS};
 use serde::Deserialize;
 
 type NumType = f64; // Union[float, int]

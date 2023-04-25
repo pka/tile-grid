@@ -1,6 +1,6 @@
-use crate::morecantile::{
-    commons::{BoundingBox, Coords, Tile},
-    models::TileMatrix,
+use crate::{
+    tile::{BoundingBox, Coords, Tile},
+    tms::TileMatrix,
 };
 use serde_json::json;
 use std::f64::consts::PI;

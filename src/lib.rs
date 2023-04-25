@@ -69,7 +69,19 @@ mod grid;
 mod grid_iterator;
 #[cfg(test)]
 mod grid_test;
-pub mod morecantile;
 
 pub use grid::{extent_wgs84_to_merc, Extent, ExtentInt, Grid, Origin, Unit};
 pub use grid_iterator::GridIterator;
+
+// OGC TMS
+mod errors;
+mod quadkey;
+mod registry;
+mod tile;
+mod tms;
+mod transform;
+
+pub use quadkey::*;
+pub use registry::*;
+pub use tile::*;
+pub use tms::*;

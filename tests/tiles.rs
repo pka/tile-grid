@@ -1,5 +1,5 @@
 use std::iter::zip;
-use tile_grid::morecantile::*;
+use tile_grid::*;
 
 const DEFAULT_GRID_COUNT: usize = 12;
 

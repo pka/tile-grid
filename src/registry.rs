@@ -1,4 +1,4 @@
-use crate::morecantile::models::{TileMatrixSet, TileMatrixSetData};
+use crate::tms::{TileMatrixSet, TileMatrixSetData};
 use std::collections::HashMap;
 use std::fs::read_to_string;
 

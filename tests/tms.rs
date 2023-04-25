@@ -1,6 +1,6 @@
 use std::fs::read_to_string;
 use std::path::{Path, PathBuf};
-use tile_grid::morecantile::*;
+use tile_grid::*;
 
 #[test]
 fn test_tile_matrix_set() {
