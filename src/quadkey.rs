@@ -1,6 +1,6 @@
 use crate::{
     tile::{BoundingBox, Coords, Tile},
-    tms::TileMatrix,
+    tms::{TileMatrix, TileMatrixSet},
 };
 use serde_json::json;
 use std::f64::consts::PI;
@@ -82,4 +82,67 @@ pub(crate) fn check_quadkey_support(tms: &Vec<TileMatrix>) -> bool {
             && is_power_of_two(t.matrix_width)
             && (t.matrix_width * 2) == tms[i + 1].matrix_width
     })
+}
+
+impl TileMatrixSet {
+    /// Get the quadkey of a tile
+    ///
+    /// # Arguments
+    /// * `tile` : instance of Tile
+    pub fn quadkey(&self, tile: Tile) -> String {
+        if !self.is_quadtree {
+            panic!("This Tile Matrix Set doesn't support 2 x 2 quadkeys.");
+        }
+
+        let t = tile;
+        let mut qk = vec![];
+        // for z in range(t.z, self.minzoom, -1)
+        for z in (self.minzoom() + 1..=t.z).rev() {
+            let mut digit = 0;
+            let mask = 1 << (z - 1);
+            if t.x & mask != 0 {
+                digit += 1;
+            }
+            if t.y & mask != 0 {
+                digit += 2;
+            }
+            qk.push(digit.to_string());
+        }
+
+        qk.join("")
+    }
+
+    /// Get the tile corresponding to a quadkey
+    ///
+    /// # Arguments
+    /// * `qk` - A quadkey string.
+    pub fn quadkey_to_tile(&self, qk: &str) -> Tile {
+        if !self.is_quadtree {
+            panic!("This Tile Matrix Set doesn't support 2 x 2 quadkeys.");
+        }
+
+        if qk.len() == 0 {
+            return Tile::new(0, 0, 0);
+        }
+
+        let mut xtile = 0;
+        let mut ytile = 0;
+        let mut z = 0;
+        for (i, digit) in qk.chars().rev().enumerate() {
+            z = i as u8;
+            let mask = 1 << i;
+            if digit == '1' {
+                xtile = xtile | mask;
+            } else if digit == '2' {
+                ytile = ytile | mask;
+            } else if digit == '3' {
+                xtile = xtile | mask;
+                ytile = ytile | mask;
+            } else if digit != '0' {
+                panic!("Unexpected quadkey digit: {}", digit);
+            }
+        }
+
+        Tile::new(xtile, ytile, z + 1)
+    }
 }
