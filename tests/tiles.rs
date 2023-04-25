@@ -1,7 +1,7 @@
 use std::iter::zip;
 use tile_grid::*;
 
-const DEFAULT_GRID_COUNT: usize = 12;
+const DEFAULT_GRID_COUNT: usize = 8;
 
 #[test]
 fn test_default_grids() {
@@ -74,7 +74,7 @@ fn test_tms_properties() {
     // Test TileSchema().
     let registry = tms();
     let tms = registry.get("WebMercatorQuad").unwrap();
-    assert_eq!(tms.crs(), "urn:ogc:def:crs:EPSG::3857");
+    assert_eq!(tms.crs().to_urn(), "urn:ogc:def:crs:EPSG:0:3857");
     assert_eq!(meters_per_unit(tms.crs()), 1.0);
     assert_eq!(tms.minzoom(), 0);
     assert_eq!(tms.maxzoom(), 24);

@@ -1,6 +1,7 @@
 use crate::{
     tile::{BoundingBox, Coords, Tile},
-    tms::{TileMatrix, TileMatrixSet},
+    tms::{TileMatrix, TileMatrixSetInst},
+    Crs,
 };
 use serde_json::json;
 use std::f64::consts::PI;
@@ -26,13 +27,14 @@ pub(crate) fn parse_tile_arg(args: Vec<i64>) -> Tile {
 /// Coefficient to convert the coordinate reference system (CRS)
 /// units into meters (metersPerUnit).
 //
+// See http://docs.ogc.org/is/17-083r4/17-083r4.html#6-1-1-1-%C2%A0-tile-matrix-in-a-two-dimensional-space
 // From note g in <http://docs.opengeospatial.org/is/17-083r2/17-083r2.html#table_2>:
 //     If the CRS uses meters as units of measure for the horizontal dimensions,
 //     then metersPerUnit=1; if it has degrees, then metersPerUnit=2pa/360
 //     (a is the Earth maximum radius of the ellipsoid).
-pub fn meters_per_unit(crs: &str) -> f64 {
+pub fn meters_per_unit(crs: &Crs) -> f64 {
     const SEMI_MAJOR_METRE: f64 = 6378137.0; /* crs.ellipsoid.semi_major_metre */
-    let unit_name = if crs.contains("EPSG:4326") || crs.contains("CRS84") {
+    let unit_name = if crs.as_srid() == 4326 {
         "degree" // FIXME: crs.axis_info[0].unit_name;
     } else {
         "metre"
@@ -79,12 +81,12 @@ fn is_power_of_two(number: u64) -> bool {
 pub(crate) fn check_quadkey_support(tms: &Vec<TileMatrix>) -> bool {
     tms.iter().enumerate().take(tms.len() - 1).all(|(i, t)| {
         t.matrix_width == t.matrix_height
-            && is_power_of_two(t.matrix_width)
-            && (t.matrix_width * 2) == tms[i + 1].matrix_width
+            && is_power_of_two(t.matrix_width.into())
+            && (u64::from(t.matrix_width) * 2) == u64::from(tms[i + 1].matrix_width)
     })
 }
 
-impl TileMatrixSet {
+impl TileMatrixSetInst {
     /// Get the quadkey of a tile
     ///
     /// # Arguments

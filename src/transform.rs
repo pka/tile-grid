@@ -1,17 +1,10 @@
+use crate::Crs;
 use proj::Proj;
-
-pub type CRS = str;
-// pub enum CRS {
-//     EPSG(u16),
-//     Authority(String, u16),
-//     ProjStr(String),
-//     ...
-// }
 
 pub type Transformer = Proj;
 
 pub trait Transform {
-    fn from_crs(from: &CRS, to: &CRS, always_xy: bool /* =true */) -> Self;
+    fn from_crs(from: &Crs, to: &Crs, always_xy: bool /* =true */) -> Self;
     fn transform(&self, x: f64, y: f64) -> (f64, f64);
     fn transform_bounds(
         &self,
@@ -24,8 +17,8 @@ pub trait Transform {
 }
 
 impl Transform for Proj {
-    fn from_crs(from: &CRS, to: &CRS, _always_xy: bool) -> Self {
-        Proj::new_known_crs(from, to, None).unwrap()
+    fn from_crs(from: &Crs, to: &Crs, _always_xy: bool) -> Self {
+        Proj::new_known_crs(&from.as_known_crs(), &to.as_known_crs(), None).unwrap()
     }
     fn transform(&self, x: f64, y: f64) -> (f64, f64) {
         let result = self.convert((x, y)).unwrap();
@@ -45,8 +38,8 @@ impl Transform for Proj {
 }
 
 impl Transform for Option<Proj> {
-    fn from_crs(from: &CRS, to: &CRS, _always_xy: bool) -> Self {
-        Proj::new_known_crs(from, to, None).ok()
+    fn from_crs(from: &Crs, to: &Crs, _always_xy: bool) -> Self {
+        Proj::new_known_crs(&from.as_known_crs(), &to.as_known_crs(), None).ok()
     }
     fn transform(&self, x: f64, y: f64) -> (f64, f64) {
         if let Some(transform) = self {

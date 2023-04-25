@@ -1,200 +1,171 @@
+use crate::common::{Crs, Links};
 use crate::quadkey::{check_quadkey_support, meters_per_unit, point_in_bbox, DEFAULT_BBOX_PREC};
 use crate::tile::{BoundingBox, Coords, Tile};
-use crate::transform::{Transform, Transformer, CRS};
-use serde::Deserialize;
+use crate::transform::{Transform, Transformer};
+use crate::{BoundingBox2D, Point2D, TitleDescriptionKeywords};
+use serde::{Deserialize, Serialize};
+use serde_with::DisplayFromStr;
+use std::num::NonZeroU64;
 
-type NumType = f64; // Union[float, int]
-type BoundsType = [NumType; 2];
 const LL_EPSILON: f64 = 1e-11;
-const WGS84_CRS: &str = "EPSG:4326"; // CRS::from_epsg(4326);
 
-/// A geographic or projected coordinate reference system.
-type CRSType = String;
-
-// impl CRSType {
-//     /// validator for the type.
-//     fn get_validators() -> impl Iterator<Item = fn()> {
-//         yield Self::validate
-//     }
-//
-//     /// Validate CRS.
-//     pub fn validate(value: CRSType) -> CRS {
-//         If input is a string we tranlate it to CRS
-//         if !value.is_instance_of(CRS) {
-//             return CRS.from_user_input(value)
-//         }
-//         value
-//     }
-//
-//     /// Update default schema.
-//     fn modify_schema(field_schema: ()) {
-//         field_schema.update(
-//             anyOf=[
-//                 {"type": "pyproj.CRS"},
-//                 {"type": "string", "minLength": 1, "maxLength": 65536},
-//             ],
-//             examples=[
-//                 "CRS.from_epsg(4326)",
-//                 "http://www.opengis.net/def/crs/EPSG/0/3978",
-//                 "urn:ogc:def:crs:EPSG::2193",
-//             ],
-//         )
-//     }
-//
-//     fn __repr__(&self) {
-//         format!("CRS({})", super().__repr__())
-//     }
-// }
-
-fn crs_to_uri(crs: &CRS) -> String {
-    let authority = "EPSG".to_string();
-    let code = 0; // FIXME: crs.proj_info().id.unwrap();
-    let version = "0".to_string();
-    // attempt to grab the authority, version, and code from the CRS
-    // let authority_code = crs.to_authority(20);
-    // if let Some(authority_code) = authority_code {
-    //     let (authority, code) = authority_code;
-    //     // if we have a version number in the authority, split it out
-    //     if authority.contains("_") {
-    //         let (authority, version) = authority.split("_");
-    //     }
-    // }
-    format!(
-        "http://www.opengis.net/def/crs/{}/{}{}",
-        authority, version, code
-    )
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TileMatrixSets {
+    pub tile_matrix_sets: Vec<TileMatrixSetItem>,
 }
 
-fn crs_axis_inverted(crs: &CRS) -> bool {
-    // Check if CRS has inverted AXIS (lat,lon) instead of (lon,lat).
-    let abbrev = ""; // FIXME: crs.axis_info[0].abbrev.to_uppercase();
-    abbrev == "Y" || abbrev == "LAT" || abbrev == "N"
+/// A minimal tile matrix set element for use within a list of tile matrix
+/// sets linking to a full definition.
+#[serde_with::serde_as]
+#[serde_with::skip_serializing_none]
+#[derive(Serialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct TileMatrixSetItem {
+    /// Optional local tile matrix set identifier, e.g. for use as unspecified
+    /// `{tileMatrixSetId}` parameter. Implementation of 'identifier'
+    pub id: Option<String>,
+    /// Title of this tile matrix set, normally used for display to a human
+    pub title: Option<String>,
+    /// Reference to an official source for this tileMatrixSet
+    pub uri: Option<String>,
+    #[serde(default)]
+    #[serde_as(as = "Option<DisplayFromStr>")]
+    pub crs: Option<Crs>,
+    /// Links to related resources. A 'self' link to the tile matrix set definition is required.
+    pub links: Links,
 }
 
-/// Bounding box
-#[derive(Deserialize, Clone, Debug)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct TMSBoundingBox {
-    #[serde(rename = "type")]
-    pub type_: String,
-    pub crs: CRSType,
-    pub lower_corner: BoundsType,
-    pub upper_corner: BoundsType,
+/// A definition of a tile matrix set following the Tile Matrix Set standard.
+/// For tileset metadata, such a description (in `tileMatrixSet` property) is
+/// only required for offline use, as an alternative to a link with a
+/// `http://www.opengis.net/def/rel/ogc/1.0/tiling-scheme` relation type.
+#[serde_with::serde_as]
+#[serde_with::skip_serializing_none]
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct TileMatrixSet {
+    #[serde(flatten)]
+    pub title_description_keywords: TitleDescriptionKeywords,
+    /// Tile matrix set identifier. Implementation of 'identifier'
+    pub id: String,
+    /// Reference to an official source for this TileMatrixSet
+    pub uri: Option<String>,
+    /// Coordinate Reference System (CRS)
+    #[serde_as(as = "DisplayFromStr")]
+    pub crs: Crs,
+    pub ordered_axes: Option<Vec<String>>,
+    /// Reference to a well-known scale set
+    pub well_known_scale_set: Option<String>,
+    /// Minimum bounding rectangle surrounding the tile matrix set, in the
+    /// supported CRS
+    pub bounding_box: Option<BoundingBox2D>,
+    /// Describes scale levels and its tile matrices
+    pub tile_matrices: Vec<TileMatrix>,
 }
 
-impl TMSBoundingBox {
-    pub fn new() -> TMSBoundingBox {
-        Self {
-            type_: "BoundingBoxType".to_string(),
-            crs: CRSType::default(),
-            lower_corner: BoundsType::default(),
-            upper_corner: BoundsType::default(),
+#[serde_with::serde_as]
+#[serde_with::skip_serializing_none]
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct TileMatrix {
+    #[serde(flatten)]
+    pub title_description_keywords: TitleDescriptionKeywords,
+    /// Identifier selecting one of the scales defined in the [TileMatrixSet]
+    /// and representing the scaleDenominator the tile. Implementation of 'identifier'
+    pub id: String,
+    /// Scale denominator of this tile matrix
+    pub scale_denominator: f64,
+    /// Cell size of this tile matrix
+    pub cell_size: f64,
+    /// description": "The corner of the tile matrix (_topLeft_ or
+    /// _bottomLeft_) used as the origin for numbering tile rows and columns.
+    /// This corner is also a corner of the (0, 0) tile.
+    #[serde(default)]
+    pub corner_of_origin: CornerOfOrigin,
+    /// Precise position in CRS coordinates of the corner of origin (e.g. the
+    /// top-left corner) for this tile matrix. This position is also a corner
+    /// of the (0, 0) tile. In previous version, this was 'topLeftCorner' and
+    /// 'cornerOfOrigin' did not exist.
+    pub point_of_origin: Point2D,
+    /// Width of each tile of this tile matrix in pixels
+    pub tile_width: NonZeroU64,
+    /// Height of each tile of this tile matrix in pixels
+    pub tile_height: NonZeroU64,
+    /// Width of the matrix (number of tiles in width)
+    pub matrix_width: NonZeroU64,
+    /// Height of the matrix (number of tiles in height)
+    pub matrix_height: NonZeroU64,
+    /// Describes the rows that has variable matrix width
+    pub variable_matrix_widths: Option<Vec<VariableMatrixWidth>>,
+}
+
+/// Variable Matrix Width data structure
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct VariableMatrixWidth {
+    /// Number of tiles in width that coalesce in a single tile for these rows
+    pub coalesc: NonZeroU64,
+    /// First tile row where the coalescence factor applies for this tilematrix
+    pub min_tile_row: u64,
+    /// Last tile row where the coalescence factor applies for this tilematrix
+    pub smax_tile_row: u64,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub enum CornerOfOrigin {
+    TopLeft,
+    BottomLeft,
+}
+
+impl Default for CornerOfOrigin {
+    fn default() -> Self {
+        CornerOfOrigin::TopLeft
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::TileMatrixSet;
+
+    #[test]
+    fn parse_tms_example() {
+        let content = std::fs::read_to_string("./data/WebMercatorQuad.json").unwrap();
+        let tms: TileMatrixSet = serde_json::from_str(&content).unwrap();
+        dbg!(&tms);
+        println!("{}", serde_json::to_string_pretty(&tms).unwrap());
+    }
+}
+
+impl TileMatrixSet {
+    /// Check if CRS has inverted AXIS (lat,lon) instead of (lon,lat).
+    fn crs_axis_inverted(&self) -> bool {
+        if let Some(axes) = &self.ordered_axes {
+            axes[0] == "Y" || axes[0] == "LAT" || axes[0] == "N"
+        } else {
+            false // TODO: Check CRS axis ordering
         }
     }
 }
 
-// class Config:
-//     """Configure TMSBoundingBox."""
-//     arbitrary_types_allowed = True
-//     json_encoders = {CRS: lambda v: CRS_to_uri(v)}
-
-impl Default for TMSBoundingBox {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-#[derive(Deserialize, Clone, Debug)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct TileMatrix {
-    #[serde(rename = "type")]
-    pub type_: String,
-    pub title: Option<String>,
-    #[serde(rename = "abstract")]
-    pub abstract_: Option<String>,
-    pub keywords: Option<Vec<String>>,
-    pub identifier: String,
-    pub scale_denominator: f64,
-    pub top_left_corner: BoundsType,
-    pub tile_width: u16,
-    pub tile_height: u16,
-    pub matrix_width: u64,
-    pub matrix_height: u64,
-}
-
-/// Tile matrix set
-#[derive(Deserialize, Clone, Debug)]
-#[serde_with::skip_serializing_none]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct TileMatrixSetData {
-    #[serde(rename = "type")]
-    pub type_: String,
-    pub title: String,
-    #[serde(rename = "abstract")]
-    pub abstract_: Option<String>,
-    pub keywords: Option<Vec<String>>,
-    pub identifier: String,
-    #[serde(rename = "supportedCRS")]
-    pub supported_crs: CRSType,
-    pub well_known_scale_set: Option<String>, // Url
-    pub bounding_box: Option<TMSBoundingBox>,
-    pub tile_matrix: Vec<TileMatrix>,
-}
-
-// https://github.com/georust/ogcapi/blob/main/ogcapi-types/src/tiles/tms.rs#L22
-/// A definition of a tile matrix set following the Tile Matrix Set standard.
-/// For tileset metadata, such a description (in `tileMatrixSet` property) is
-/// only required for offline use, as an alternative to a link with a
-// /// `http://www.opengis.net/def/rel/ogc/1.0/tiling-scheme` relation type.
-// #[serde_with::serde_as]
-// #[serde_with::skip_serializing_none]
-// #[derive(Serialize, Deserialize, Debug, Clone)]
-// #[serde(rename_all = "camelCase")]
-// pub struct TileMatrixSet {
-//     #[serde(flatten)]
-//     pub title_description_keywords: TitleDescriptionKeywords,
-//     /// Tile matrix set identifier. Implementation of 'identifier'
-//     pub id: String,
-//     /// Reference to an official source for this TileMatrixSet
-//     pub uri: Option<String>,
-//     /// Coordinate Reference System (CRS)
-//     #[serde_as(as = "DisplayFromStr")]
-//     pub crs: Crs,
-//     pub ordered_axes: Option<Vec<String>>,
-//     /// Reference to a well-known scale set
-//     pub well_known_scale_set: Option<String>,
-//     /// Minimum bounding rectangle surrounding the tile matrix set, in the
-//     /// supported CRS
-//     pub bounding_box: Option<BoundingBox2D>,
-//     /// Describes scale levels and its tile matrices
-//     pub tile_matrices: Vec<TileMatrix>,
-// }
-
 #[derive(Debug)]
-pub struct TileMatrixSet {
-    pub tms: TileMatrixSetData,
+pub struct TileMatrixSetInst {
+    pub tms: TileMatrixSet,
     pub is_quadtree: bool,
     // CRS transformation attributes
-    geographic_crs: CRSType, // default=WGS84_CRS
+    geographic_crs: Crs, // default=WGS84_CRS
     to_geographic: Option<Transformer>,
     from_geographic: Option<Transformer>,
 }
 
-impl TileMatrixSet {
+impl TileMatrixSetInst {
     /// Create PyProj transforms and check if TileMatrixSet supports quadkeys.
-    pub fn init(data: TileMatrixSetData) -> Self {
-        let is_quadtree = check_quadkey_support(&data.tile_matrix);
-        let geographic_crs = WGS84_CRS.to_string(); // data.get("_geographic_crs", WGS84_CRS)
-        let to_geographic = Some(Transformer::from_crs(
-            &data.supported_crs,
-            &geographic_crs,
-            true,
-        ));
-        let from_geographic = Some(Transformer::from_crs(
-            &geographic_crs,
-            &data.supported_crs,
-            true,
-        ));
+    pub fn init(data: TileMatrixSet) -> Self {
+        let is_quadtree = check_quadkey_support(&data.tile_matrices);
+        let geographic_crs = Crs::default(); // data.get("_geographic_crs", WGS84_CRS)
+        let to_geographic = Some(Transformer::from_crs(&data.crs, &geographic_crs, true));
+        let from_geographic = Some(Transformer::from_crs(&geographic_crs, &data.crs, true));
         // except ProjError:
         //     warnings.warn(
         //         "Could not create coordinate Transformer from input CRS to the given geographic CRS"
@@ -214,17 +185,16 @@ impl TileMatrixSet {
     fn sort_tile_matrices(v: Vec<TileMatrix>) -> Vec<TileMatrix> {
         let mut v = v.clone();
         v.sort_by(|a, b| {
-            a.identifier
-                .parse::<u8>()
+            a.id.parse::<u8>()
                 .unwrap()
-                .cmp(&b.identifier.parse::<u8>().unwrap())
+                .cmp(&b.id.parse::<u8>().unwrap())
         });
         v
     }
 
     /// Iterate over matrices
     pub fn matrices(&self) -> &Vec<TileMatrix> {
-        &self.tms.tile_matrix
+        &self.tms.tile_matrices
     }
 
     // def __repr__(self):
@@ -232,8 +202,8 @@ impl TileMatrixSet {
     //     return f"<TileMatrixSet title='{self.title}' identifier='{self.identifier}'>"
 
     /// Fetch CRS from epsg
-    pub fn crs(&self) -> &CRS {
-        &self.tms.supported_crs
+    pub fn crs(&self) -> &Crs {
+        &self.tms.crs
     }
 
     // def rasterio_crs(self):
@@ -249,18 +219,18 @@ impl TileMatrixSet {
 
     /// TileMatrixSet minimum TileMatrix identifier
     pub fn minzoom(&self) -> u8 {
-        self.tms.tile_matrix[0].identifier.parse::<u8>().unwrap()
+        self.tms.tile_matrices[0].id.parse::<u8>().unwrap()
     }
     /// TileMatrixSet maximum TileMatrix identifier
     pub fn maxzoom(&self) -> u8 {
-        self.tms.tile_matrix[self.tms.tile_matrix.len() - 1]
-            .identifier
+        self.tms.tile_matrices[self.tms.tile_matrices.len() - 1]
+            .id
             .parse::<u8>()
             .unwrap()
     }
     /// Check if CRS has inverted AXIS (lat,lon) instead of (lon,lat).
     fn invert_axis(&self) -> bool {
-        crs_axis_inverted(self.crs())
+        self.tms.crs_axis_inverted()
     }
 
     /// Construct a custom TileMatrixSet.
@@ -283,46 +253,46 @@ impl TileMatrixSet {
     /// * `geographic_crs` - Geographic (lat,lon) coordinate reference system (default is EPSG:4326)
     pub fn custom(
         extent: Vec<f64>,
-        crs: &CRS,
+        crs: &Crs,
         tile_width: u16,               // = 256,
         tile_height: u16,              // = 256,
         matrix_scale: Option<Vec<u8>>, // = None,
-        extent_crs: Option<&CRS>,      // = None,
+        extent_crs: Option<&Crs>,      // = None,
         minzoom: u8,                   // = 0,
         maxzoom: u8,                   // = 24,
         title: &str,                   // = "Custom TileMatrixSet",
         identifier: &str,              // = "Custom",
-        geographic_crs: &CRS,          // = WGS84_CRS,
+        geographic_crs: &Crs,          // = WGS84_CRS,
     ) -> Self {
+        todo!()
+        /*
         let matrix_scale = matrix_scale.unwrap_or(vec![1, 1]);
 
-        let mut tms: TileMatrixSetData = TileMatrixSetData {
-            type_: "TileMatrixSetType".to_string(),
+        let mut tms: TileMatrixSet = TileMatrixSet {
             title: title.to_string(),
             abstract_: None,
             keywords: None,
             identifier: identifier.to_string(),
-            supported_crs: crs.to_string(),
+            crs: crs.to_string(),
             well_known_scale_set: None,
             bounding_box: None,
-            tile_matrix: Vec::new(),
+            tile_matrices: Vec::new(),
         };
 
-        let is_inverted = crs_axis_inverted(crs);
+        let is_inverted = tms.crs_axis_inverted();
 
         tms.bounding_box = Some(if is_inverted {
-            TMSBoundingBox {
-                type_: "BoundingBoxType".to_string(),
+            BoundingBox2D {
                 crs: extent_crs.unwrap_or(crs).to_string(),
-                lower_corner: [extent[1], extent[0]],
-                upper_corner: [extent[3], extent[2]],
+                lower_left: [extent[1], extent[0]],
+                upper_right: [extent[3], extent[2]],
             }
         } else {
-            TMSBoundingBox {
+            BoundingBox2D {
                 type_: "BoundingBoxType".to_string(),
                 crs: extent_crs.unwrap_or(crs).to_string(),
-                lower_corner: [extent[0], extent[1]],
-                upper_corner: [extent[2], extent[3]],
+                lower_left: [extent[0], extent[1]],
+                upper_right: [extent[2], extent[3]],
             }
         });
 
@@ -361,7 +331,7 @@ impl TileMatrixSet {
                 keywords: None,
                 identifier: zoom.to_string(),
                 scale_denominator: res * mpu as f64 / 0.00028,
-                top_left_corner: [x_origin, y_origin],
+                point_of_origin: [x_origin, y_origin],
                 tile_width,
                 tile_height,
                 matrix_width: matrix_scale[0] as u64 * 2_u64.pow(zoom as u32),
@@ -372,20 +342,21 @@ impl TileMatrixSet {
         let mut tms = TileMatrixSet::init(tms);
         tms.geographic_crs = geographic_crs.to_string();
         tms
+        */
     }
 
     /// Return the TileMatrix for a specific zoom.
     pub fn matrix(&self, zoom: u8) -> TileMatrix {
-        for m in &self.tms.tile_matrix {
-            if m.identifier == zoom.to_string() {
+        for m in &self.tms.tile_matrices {
+            if m.id == zoom.to_string() {
                 return m.clone();
             }
         }
 
-        let matrix_scale = (1..self.tms.tile_matrix.len())
+        let matrix_scale = (1..self.tms.tile_matrices.len())
             .map(|idx| {
-                (self.tms.tile_matrix[idx].scale_denominator
-                    / self.tms.tile_matrix[idx - 1].scale_denominator)
+                (self.tms.tile_matrices[idx].scale_denominator
+                    / self.tms.tile_matrices[idx - 1].scale_denominator)
                     .round() // FIXME: round ndigits=2
             })
             .collect::<Vec<_>>();
@@ -402,22 +373,32 @@ impl TileMatrixSet {
             zoom
         );
 
-        let mut tile_matrix = self.tms.tile_matrix.last().unwrap().clone();
+        let mut tile_matrix = self.tms.tile_matrices.last().unwrap().clone();
         let factor = 1.0 / matrix_scale[0];
-        while tile_matrix.identifier != zoom.to_string() {
+        while tile_matrix.id != zoom.to_string() {
             tile_matrix = TileMatrix {
-                type_: "TileMatrixType".to_string(),
-                title: None,
-                abstract_: None,
-                keywords: None,
-                identifier: (tile_matrix.identifier.parse::<i32>().unwrap() + 1).to_string(),
+                title_description_keywords: TitleDescriptionKeywords {
+                    title: None,
+                    description: None,
+                    keywords: None,
+                },
+                id: (tile_matrix.id.parse::<i32>().unwrap() + 1).to_string(),
                 scale_denominator: tile_matrix.scale_denominator / factor,
-                top_left_corner: tile_matrix.top_left_corner,
+                cell_size: tile_matrix.cell_size, // FIXME
+                corner_of_origin: tile_matrix.corner_of_origin,
+                point_of_origin: tile_matrix.point_of_origin,
                 tile_width: tile_matrix.tile_width,
                 tile_height: tile_matrix.tile_height,
-                matrix_width: (tile_matrix.matrix_width as f64 * factor).round() as u64,
-                matrix_height: (tile_matrix.matrix_height as f64 * factor).round() as u64,
-            };
+                matrix_width: NonZeroU64::new(
+                    (u64::from(tile_matrix.matrix_width) as f64 * factor).round() as u64,
+                )
+                .unwrap(),
+                matrix_height: NonZeroU64::new(
+                    (u64::from(tile_matrix.matrix_height) as f64 * factor).round() as u64,
+                )
+                .unwrap(),
+                variable_matrix_widths: None,
+            }
         }
 
         tile_matrix
@@ -560,23 +541,23 @@ impl TileMatrixSet {
         let res = self.resolution(&matrix);
 
         let origin_x: f64 = if self.invert_axis() {
-            matrix.top_left_corner[1]
+            matrix.point_of_origin[1]
         } else {
-            matrix.top_left_corner[0]
+            matrix.point_of_origin[0]
         };
         let origin_y = if self.invert_axis() {
-            matrix.top_left_corner[0]
+            matrix.point_of_origin[0]
         } else {
-            matrix.top_left_corner[1]
+            matrix.point_of_origin[1]
         };
 
         let xtile = if !xcoord.is_infinite() {
-            ((xcoord - origin_x) / (res * matrix.tile_width as f64)).floor()
+            ((xcoord - origin_x) / (res * u64::from(matrix.tile_width) as f64)).floor()
         } else {
             0.0
         };
         let ytile = if !ycoord.is_infinite() {
-            ((origin_y - ycoord) / (res * matrix.tile_height as f64)).floor()
+            ((origin_y - ycoord) / (res * u64::from(matrix.tile_height) as f64)).floor()
         } else {
             0.0
         };
@@ -586,14 +567,14 @@ impl TileMatrixSet {
 
         let ytile = if ytile < 0.0 { 0 } else { ytile as u64 };
 
-        let xtile = if xtile > matrix.matrix_width {
-            matrix.matrix_width
+        let xtile = if xtile > matrix.matrix_width.into() {
+            matrix.matrix_width.into()
         } else {
             xtile
         };
 
-        let ytile = if ytile > matrix.matrix_height {
-            matrix.matrix_height
+        let ytile = if ytile > matrix.matrix_height.into() {
+            matrix.matrix_height.into()
         } else {
             ytile
         };
@@ -622,18 +603,18 @@ impl TileMatrixSet {
         let res = self.resolution(&matrix);
 
         let origin_x = if self.invert_axis() {
-            matrix.top_left_corner[1]
+            matrix.point_of_origin[1]
         } else {
-            matrix.top_left_corner[0]
+            matrix.point_of_origin[0]
         };
         let origin_y = if self.invert_axis() {
-            matrix.top_left_corner[0]
+            matrix.point_of_origin[0]
         } else {
-            matrix.top_left_corner[1]
+            matrix.point_of_origin[1]
         };
 
-        let xcoord = origin_x + t.x as f64 * res * matrix.tile_width as f64;
-        let ycoord = origin_y - t.y as f64 * res * matrix.tile_height as f64;
+        let xcoord = origin_x + t.x as f64 * res * u64::from(matrix.tile_width) as f64;
+        let ycoord = origin_y - t.y as f64 * res * u64::from(matrix.tile_height) as f64;
         Coords::new(xcoord, ycoord)
     }
 
@@ -676,20 +657,24 @@ impl TileMatrixSet {
     pub fn xy_bbox(&self) -> BoundingBox {
         let (left, bottom, right, top) = if let Some(bounding_box) = &self.tms.bounding_box {
             let (left, bottom) = if self.invert_axis() {
-                (&bounding_box.lower_corner[1], &bounding_box.lower_corner[0])
+                (&bounding_box.lower_left[1], &bounding_box.lower_left[0])
             } else {
-                (&bounding_box.lower_corner[0], &bounding_box.lower_corner[1])
+                (&bounding_box.lower_left[0], &bounding_box.lower_left[1])
             };
             let (right, top) = if self.invert_axis() {
-                (&bounding_box.upper_corner[1], &bounding_box.upper_corner[0])
+                (&bounding_box.upper_right[1], &bounding_box.upper_right[0])
             } else {
-                (&bounding_box.upper_corner[0], &bounding_box.upper_corner[1])
+                (&bounding_box.upper_right[0], &bounding_box.upper_right[1])
             };
-            if bounding_box.crs != self.crs() {
-                let transform = Transformer::from_crs(&bounding_box.crs, &self.crs(), true);
-                let (left, bottom, right, top) =
-                    transform.transform_bounds(*left, *bottom, *right, *top /* , Some(21) */);
-                (left, bottom, right, top)
+            if let Some(crs) = &bounding_box.crs {
+                if crs != self.crs() {
+                    let transform = Transformer::from_crs(crs, &self.crs(), true);
+                    let (left, bottom, right, top) = transform
+                        .transform_bounds(*left, *bottom, *right, *top /* , Some(21) */);
+                    (left, bottom, right, top)
+                } else {
+                    (*left, *bottom, *right, *top)
+                }
             } else {
                 (*left, *bottom, *right, *top)
             }
@@ -698,8 +683,8 @@ impl TileMatrixSet {
             let matrix = self.matrix(zoom);
             let top_left = self.ul_(&Tile::new(0, 0, zoom));
             let bottom_right = self.ul_(&Tile::new(
-                matrix.matrix_width as i64,
-                matrix.matrix_height as i64,
+                u64::from(matrix.matrix_width) as i64,
+                u64::from(matrix.matrix_height) as i64,
                 zoom,
             ));
             (top_left.x, bottom_right.y, bottom_right.x, top_left.y)
@@ -877,9 +862,9 @@ impl TileMatrixSet {
         let m = self.matrix(zoom);
         MinMax {
             x_min: 0,
-            x_max: (m.matrix_width - 1) as i64,
+            x_max: (u64::from(m.matrix_width) - 1) as i64,
             y_min: 0,
-            y_max: (m.matrix_height - 1) as i64,
+            y_max: (u64::from(m.matrix_height) - 1) as i64,
         }
     }
 
