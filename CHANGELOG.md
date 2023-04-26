@@ -1,3 +1,7 @@
+## UNRELEASED
+
+* New implementation for supporting OGC TileMatrixSets
+
 ## 0.3.0
 
 * Rename `extent_to_merc` to `extent_wgs84_to_merc`

@@ -5,7 +5,7 @@
 
 //! Grid iterators
 
-use crate::grid::ExtentInt;
+use crate::wmts::grid::ExtentInt;
 
 /// Level-by-level iterator
 pub struct GridIterator {
@@ -73,7 +73,7 @@ impl Iterator for GridIterator {
 
 #[test]
 fn test_mercator_iter() {
-    use crate::grid::Grid;
+    use crate::wmts::grid::Grid;
     let grid = Grid::web_mercator();
     let tile_limits = grid.tile_limits(grid.extent.clone(), 0);
     let griditer = GridIterator::new(0, 2, tile_limits);
@@ -142,7 +142,7 @@ fn test_mercator_iter() {
 
 #[test]
 fn test_bad_params() {
-    use crate::grid::Grid;
+    use crate::wmts::grid::Grid;
     let grid = Grid::web_mercator();
 
     // missing tile_limits

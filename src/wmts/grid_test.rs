@@ -3,7 +3,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 //
 
-use crate::grid::{extent_wgs84_to_merc, lonlat_to_merc, Extent, ExtentInt, Grid};
+use crate::wmts::grid::{extent_wgs84_to_merc, lonlat_to_merc, Extent, ExtentInt, Grid};
 
 #[test]
 fn test_bbox() {
@@ -230,7 +230,7 @@ mod web_mercator {
     // --- Web Mercator calculations ---
     // Credits: Mercantile by Sean C. Gillies (https://github.com/mapbox/mercantile)
 
-    use crate::grid::Extent;
+    use crate::wmts::grid::Extent;
     use std::f64::consts;
 
     #[derive(PartialEq, Debug)]
