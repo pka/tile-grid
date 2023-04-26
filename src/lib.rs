@@ -5,6 +5,7 @@ mod errors;
 mod quadkey;
 mod registry;
 mod tile;
+mod tileset;
 mod tms;
 mod transform;
 mod wmts;
@@ -13,6 +14,7 @@ pub use common::*;
 pub use quadkey::*;
 pub use registry::*;
 pub use tile::*;
+pub use tileset::*;
 pub use tms::*;
 pub use wmts::*;
 
