@@ -6,6 +6,10 @@ tile-grid
 
 tile-grid is a library for using OGC TileMatrixSets (TMS).
 
+tile-grid follows the OGC Two Dimensional Tile Matrix Set specification found in https://docs.ogc.org/is/17-083r4/17-083r4.html
+
+Note: Variable matrix width tile set are not supported.
+
 Credits
 -------
 
