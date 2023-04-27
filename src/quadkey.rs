@@ -1,7 +1,7 @@
 use crate::{
     tile::{BoundingBox, Coords, Tile},
     tile_matrix_set::TileMatrix,
-    tms::TileMatrixSetInst,
+    tms::Tms,
     Crs,
 };
 use serde_json::json;
@@ -87,7 +87,7 @@ pub(crate) fn check_quadkey_support(tms: &Vec<TileMatrix>) -> bool {
     })
 }
 
-impl TileMatrixSetInst<'_> {
+impl Tms<'_> {
     /// Get the quadkey of a tile
     ///
     /// # Arguments

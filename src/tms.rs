@@ -8,8 +8,9 @@ use std::num::NonZeroU64;
 
 const LL_EPSILON: f64 = 1e-11;
 
+/// Tile Matrix Set API.
 #[derive(Debug)]
-pub struct TileMatrixSetInst<'a> {
+pub struct Tms<'a> {
     pub tms: &'a TileMatrixSet,
     pub is_quadtree: bool,
     // CRS transformation attributes
@@ -18,9 +19,9 @@ pub struct TileMatrixSetInst<'a> {
     from_geographic: Option<Transformer>,
 }
 
-impl<'a> TileMatrixSetInst<'a> {
-    /// Create PyProj transforms and check if TileMatrixSet supports quadkeys.
-    pub fn init(data: &'a TileMatrixSet) -> Self {
+impl<'a> Tms<'a> {
+    /// Prepare transformations and check if TileMatrixSet supports quadkeys.
+    fn init(data: &'a TileMatrixSet) -> Self {
         let is_quadtree = check_quadkey_support(&data.tile_matrices);
         let geographic_crs = Crs::default(); // data.get("_geographic_crs", WGS84_CRS)
         let to_geographic = Some(Transformer::from_crs(&data.crs, &geographic_crs, true));
@@ -862,8 +863,8 @@ struct MinMax {
     y_max: i64,
 }
 
-impl<'a> From<&'a TileMatrixSet> for TileMatrixSetInst<'a> {
+impl<'a> From<&'a TileMatrixSet> for Tms<'a> {
     fn from(tms: &'a TileMatrixSet) -> Self {
-        TileMatrixSetInst::init(tms)
+        Tms::init(tms)
     }
 }

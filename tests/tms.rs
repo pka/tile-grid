@@ -24,8 +24,8 @@ fn test_tile_matrix_set() {
     for tileset in tilesets {
         // let ts = TileMatrixSet::parse_file(tilesets).unwrap();
         let data = read_to_string(tileset).unwrap();
-        let tms: TileMatrixSet = serde_json::from_str(&data).unwrap();
-        let ts = TileMatrixSetInst::init(&tms);
+        let tms: &TileMatrixSet = &serde_json::from_str(&data).unwrap();
+        let ts: Tms = tms.into();
         // This would fail if `supportedCRS` isn't supported by PROJ
         assert!(ts.crs().as_known_crs().len() > 0);
     }
@@ -34,7 +34,7 @@ fn test_tile_matrix_set() {
 #[test]
 fn test_tile_matrix_iter() {
     // Test iterator
-    let tms: TileMatrixSetInst = tms().get("WebMercatorQuad").unwrap().into();
+    let tms: Tms = tms().get("WebMercatorQuad").unwrap().into();
     assert_eq!(tms.matrices().len(), 25);
 }
 
