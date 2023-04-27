@@ -20,7 +20,7 @@ fn test_tile_matrix_set() {
 
     // Load TileMatrixSet in models.
     // Confirm model validation is working
-    #[cfg(feature = "projtransform")]
+    #[cfg(feature = "projtransform")] // TODO: load only Mercator TMS
     for tileset in tilesets {
         // let ts = TileMatrixSet::parse_file(tilesets).unwrap();
         let data = std::fs::read_to_string(tileset).unwrap();
@@ -111,6 +111,50 @@ fn test_tile_matrix_iter() {
 // fn test_invalid_tms() {
 //     assert!(morecantile::tms::get("ANotValidName").is_err());
 // }
+
+#[test]
+fn morecantile_examples() {
+    let tms: Tms = tms().get("WebMercatorQuad").unwrap().into();
+
+    // Get the bounds for tile Z=4, X=10, Y=10 in the input projection
+    let bounds = tms.xy_bounds(&Tile::new(10, 10, 4));
+    assert_eq!(
+        bounds,
+        BoundingBox::new(
+            5009377.085697308,
+            -7514065.628545959,
+            7514065.628545959,
+            -5009377.085697308
+        )
+    );
+    //>>> BoundingBox(left=5009377.085697308, bottom=-7514065.628545959, right=7514065.628545959, top=-5009377.085697308)
+
+    // Get the bounds for tile Z=4, X=10, Y=10 in LatLon (WGS84)
+    let bounds = tms.bounds(&Tile::new(10, 10, 4));
+    assert_eq!(
+        bounds,
+        BoundingBox::new(45.0, -55.77657301866769, 67.5, -40.97989806962013)
+    );
+    // >>> BoundingBox(left=44.999999999999964, bottom=-55.776573018667634, right=67.4999999999999, top=-40.97989806962009)
+
+    // Find tile for lat/lon
+
+    //let tms: Tms = tms().get("WebMercatorQuad").unwrap().into();
+
+    let tile = tms.tile(159.31, -42.0, 4, false);
+    assert_eq!(tile, Tile::new(15, 10, 4));
+
+    // Or using coordinates in input CRS
+    let coord = tms.xy(159.31, -42.0, false);
+    if cfg!(projtransform) {
+        assert_eq!((coord.x, coord.y), (17734308.078276414, -5160979.444049783));
+    } else {
+        //assert_eq!((coord.x, coord.y), (17734308.078276414, -5160979.444049781));
+    }
+
+    // tms.tile_(x, y, 4)
+    // >>> Tile(x=15, y=10, z=4)
+}
 
 fn web_mercator_quad() -> TileMatrixSet {
     TileMatrixSet {
