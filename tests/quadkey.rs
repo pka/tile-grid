@@ -5,13 +5,18 @@ fn test_quadkey_support() {
     let tests = vec![
         // ("LINZAntarticaMapTilegrid", false),
         //"CDB1GlobalGrid", // Error("missing field `coalesc`", line: 19, column: 67)
+        #[cfg(feature = "projtransform")]
         ("EuropeanETRS89_LAEAQuad", true),
         //"GNOSISGlobalGrid", // Error("missing field `coalesc`", line: 31, column: 66)
+        #[cfg(feature = "projtransform")]
         ("CanadianNAD83_LCC", false),
+        #[cfg(feature = "projtransform")]
         ("UPSArcticWGS84Quad", true),
         //("NZTM2000", false),
         //("NZTM2000Quad", true),
+        #[cfg(feature = "projtransform")]
         ("UTM31WGS84Quad", false),
+        #[cfg(feature = "projtransform")]
         ("UPSAntarcticWGS84Quad", true),
         ("WorldMercatorWGS84Quad", true),
         //?("WGS1984Quad", false),

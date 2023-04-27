@@ -1,7 +1,6 @@
 use crate::tile_matrix_set::TileMatrixSet;
 use once_cell::sync::OnceCell;
 use std::collections::HashMap;
-use std::fs::read_to_string;
 
 pub struct TileMatrixSets {
     // Registry containing TileMatrixSetsImpl not supported because of Proj:
@@ -43,28 +42,33 @@ impl TileMatrixSets {
 pub fn tms() -> &'static TileMatrixSets {
     static TMS: OnceCell<TileMatrixSets> = OnceCell::new();
     &TMS.get_or_init(|| {
+        const WEB_MERCARTOR_QUAD: &[u8; 7744] = include_bytes!("../data/WebMercatorQuad.json");
         let mut sets = TileMatrixSets::new();
         let tms = vec![
-            "CanadianNAD83_LCC.json",
-            //"CDB1GlobalGrid.json", // Error("missing field `coalesc`", line: 19, column: 67)
-            "EuropeanETRS89_LAEAQuad.json",
-            //"GNOSISGlobalGrid.json", // Error("missing field `coalesc`", line: 31, column: 66)
-            "UPSAntarcticWGS84Quad.json",
-            "UPSArcticWGS84Quad.json",
-            "UTM31WGS84Quad.json",
-            "WebMercatorQuad.json",
-            "WGS1984Quad.json",
-            "WorldCRS84Quad.json",
-            "WorldMercatorWGS84Quad.json",
+            #[cfg(feature = "projtransform")]
+            include_str!("../data/CanadianNAD83_LCC.json"),
+            //include_str!("../data/CDB1GlobalGrid.json"), // Error("missing field `coalesc`", line: 19, column: 67)
+            #[cfg(feature = "projtransform")]
+            include_str!("../data/EuropeanETRS89_LAEAQuad.json"),
+            //include_str!("../data/GNOSISGlobalGrid.json"), // Error("missing field `coalesc`", line: 31, column: 66)
+            #[cfg(feature = "projtransform")]
+            include_str!("../data/UPSAntarcticWGS84Quad.json"),
+            #[cfg(feature = "projtransform")]
+            include_str!("../data/UPSArcticWGS84Quad.json"),
+            #[cfg(feature = "projtransform")]
+            include_str!("../data/UTM31WGS84Quad.json"),
+            include_str!("../data/WebMercatorQuad.json"),
+            include_str!("../data/WGS1984Quad.json"),
+            //include_str!("../data/WorldCRS84Quad.json"), // conflicts with WGS1984Quad
+            include_str!("../data/WorldMercatorWGS84Quad.json"),
         ]
         .into_iter()
-        .map(|f| {
-            let data = read_to_string(&format!("./data/{f}")).unwrap();
-            let tms: TileMatrixSet = serde_json::from_str(&data).unwrap();
+        .map(|data| {
+            let tms: TileMatrixSet = serde_json::from_str(data).unwrap();
             tms
         })
         .collect::<Vec<_>>();
-        sets.register(tms, true);
+        sets.register(tms, false);
         // user_tms_dir = os.environ.get("TILEMATRIXSET_DIRECTORY", None)
         // if user_tms_dir:
         //     tms_paths.extend(list(pathlib.Path(user_tms_dir).glob("*.json")))

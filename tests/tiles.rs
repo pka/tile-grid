@@ -1,12 +1,16 @@
 use std::iter::zip;
 use tile_grid::*;
 
+#[cfg(feature = "projtransform")]
 const DEFAULT_GRID_COUNT: usize = 8;
+#[cfg(not(feature = "projtransform"))]
+const DEFAULT_GRID_COUNT: usize = 3;
 
 #[test]
 fn test_default_grids() {
     // Morecantile.default_grids should return the correct list of grids.
     let registry = tms();
+    dbg!(registry.list().collect::<Vec<_>>());
     assert_eq!(registry.list().count(), DEFAULT_GRID_COUNT);
 
     // assert!(matches!(
