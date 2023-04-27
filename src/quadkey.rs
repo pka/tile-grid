@@ -1,6 +1,7 @@
 use crate::{
     tile::{BoundingBox, Coords, Tile},
-    tms::{TileMatrix, TileMatrixSetInst},
+    tile_matrix_set::TileMatrix,
+    tms::TileMatrixSetInst,
     Crs,
 };
 use serde_json::json;

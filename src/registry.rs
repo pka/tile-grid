@@ -1,4 +1,4 @@
-use crate::tms::TileMatrixSet;
+use crate::tile_matrix_set::TileMatrixSet;
 use once_cell::sync::OnceCell;
 use std::collections::HashMap;
 use std::fs::read_to_string;
