@@ -47,12 +47,12 @@ use tile_grid::{tms, Tile, Tms};
 
 let tms: Tms = tms().get("WebMercatorQuad").unwrap().into();
 
-let tile = tms.tile(159.31, -42.0, 4, false);
+let tile = tms.tile(159.31, -42.0, 4);
 assert_eq!(tile, Tile::new(15, 10, 4));
 
 // Or using coordinates in input CRS
-let coord = tms.xy(159.31, -42.0, false);
-assert_eq!((coord.x, coord.y), (17734308.078276414, -5160979.444049783));
+let tile = tms.xytile(17734308.1, -5160979.4, 4);
+assert_eq!(tile, Tile::new(15, 10, 4));
 ```
 
 Credits

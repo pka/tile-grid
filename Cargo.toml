@@ -9,6 +9,7 @@ repository = "https://github.com/pka/tile-grid"
 readme = "README.md"
 license = "MIT"
 keywords = ["geo", "vector-tiles", "wmts", "mercator", "wgs84"]
+categories = ["science::geo"]
 
 [features]
 projtransform = ["proj"]

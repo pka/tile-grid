@@ -128,7 +128,6 @@ mod test {
     fn parse_tms_example() {
         let content = std::fs::read_to_string("./data/WebMercatorQuad.json").unwrap();
         let tms: TileMatrixSet = serde_json::from_str(&content).unwrap();
-        dbg!(&tms);
         println!("{}", serde_json::to_string_pretty(&tms).unwrap());
     }
 }

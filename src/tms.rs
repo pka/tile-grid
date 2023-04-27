@@ -178,7 +178,7 @@ impl<'a> Tms<'a> {
         let width = (bbox.right - bbox.left).abs();
         let height = (bbox.top - bbox.bottom).abs();
         let mpu = meters_per_unit(crs);
-        for zoom in minzoom..maxzoom + 1 {
+        for zoom in minzoom..=maxzoom {
             let res = f64::max(
                 width
                     / (tile_width as f64 * matrix_scale[0] as f64)
@@ -352,13 +352,7 @@ impl<'a> Tms<'a> {
     }
 
     /// Transform geographic longitude and latitude coordinates to TMS CRS
-    pub fn xy(&self, lng: f64, lat: f64, truncate: bool /* =False */) -> Coords {
-        let mut lng = lng;
-        let mut lat = lat;
-        if truncate {
-            (lng, lat) = self.truncate_lnglat(lng, lat);
-        }
-
+    pub fn xy(&self, lng: f64, lat: f64) -> Coords {
         let inside = point_in_bbox(Coords::new(lng, lat), self.xy_bbox(), DEFAULT_BBOX_PREC);
         if !inside {
             println!(
@@ -370,6 +364,12 @@ impl<'a> Tms<'a> {
         let (x, y) = self.from_geographic.transform(lng, lat);
 
         return Coords::new(x, y);
+    }
+
+    /// Transform geographic longitude and latitude coordinates to TMS CRS. Truncate geographic coordinates to TMS geographic bbox.
+    pub fn xy_truncated(&self, lng: f64, lat: f64) -> Coords {
+        let (lng, lat) = self.truncate_lnglat(lng, lat);
+        self.xy(lng, lat)
     }
 
     /// Truncate geographic coordinates to TMS geographic bbox.
@@ -399,7 +399,7 @@ impl<'a> Tms<'a> {
     /// # Arguments
     /// * `xcoord`, ycoord - A `X` and `Y` pair in TMS coordinate reference system.
     /// * `zoom` - The zoom level.
-    fn tile_(&self, xcoord: f64, ycoord: f64, zoom: u8) -> Tile {
+    pub fn xytile(&self, xcoord: f64, ycoord: f64, zoom: u8) -> Tile {
         let matrix = self.matrix(zoom);
         let res = self.resolution(&matrix);
 
@@ -450,10 +450,19 @@ impl<'a> Tms<'a> {
     /// # Arguments
     /// * `lng`, `lat` : A longitude and latitude pair in geographic coordinate reference system.
     /// * `zoom` : The zoom level.
-    /// * `truncate` : Whether or not to truncate inputs to limits of TMS geographic bounds.
-    pub fn tile(&self, lng: f64, lat: f64, zoom: u8, truncate: bool /* =False */) -> Tile {
-        let xy = self.xy(lng, lat, truncate);
-        self.tile_(xy.x, xy.y, zoom)
+    pub fn tile(&self, lng: f64, lat: f64, zoom: u8) -> Tile {
+        let xy = self.xy(lng, lat);
+        self.xytile(xy.x, xy.y, zoom)
+    }
+
+    /// Get the tile for a given geographic longitude and latitude pair. Truncate inputs to limits of TMS geographic bounds.
+    ///
+    /// # Arguments
+    /// * `lng`, `lat` : A longitude and latitude pair in geographic coordinate reference system.
+    /// * `zoom` : The zoom level.
+    pub fn tile_truncated(&self, lng: f64, lat: f64, zoom: u8) -> Tile {
+        let xy = self.xy_truncated(lng, lat);
+        self.xytile(xy.x, xy.y, zoom)
     }
 
     /// Return the upper left coordinate of the tile in TMS coordinate reference system.
@@ -615,16 +624,21 @@ impl<'a> Tms<'a> {
         } else {
             vec![(west, south, east, north)]
         };
+        let get_tile = if truncate {
+            Tms::tile_truncated
+        } else {
+            Tms::tile
+        };
         for bb in bboxes {
             let w = bb.0.max(bbox.left);
             let s = bb.1.max(bbox.bottom);
             let e = bb.2.min(bbox.right);
             let n = bb.3.min(bbox.top);
             for z in zooms {
-                let ul_tile = self.tile(w + LL_EPSILON, n - LL_EPSILON, *z, truncate);
-                let lr_tile = self.tile(e - LL_EPSILON, s + LL_EPSILON, *z, truncate);
-                for i in ul_tile.x..lr_tile.x + 1 {
-                    for j in ul_tile.y..lr_tile.y + 1 {
+                let ul_tile = get_tile(self, w + LL_EPSILON, n - LL_EPSILON, *z);
+                let lr_tile = get_tile(self, e - LL_EPSILON, s + LL_EPSILON, *z);
+                for i in ul_tile.x..=lr_tile.x {
+                    for j in ul_tile.y..=lr_tile.y {
                         tiles.push(Tile::new(i, j, *z));
                     }
                 }
@@ -810,12 +824,12 @@ impl<'a> Tms<'a> {
         let res = self.resolution(&self.matrix(t.z)) / 10.0;
 
         let bbox = self.xy_bounds(t);
-        let ul_tile = self.tile_(bbox.left + res, bbox.top - res, target_zoom);
-        let lr_tile = self.tile_(bbox.right - res, bbox.bottom + res, target_zoom);
+        let ul_tile = self.xytile(bbox.left + res, bbox.top - res, target_zoom);
+        let lr_tile = self.xytile(bbox.right - res, bbox.bottom + res, target_zoom);
 
         let mut tiles = Vec::new();
-        for i in ul_tile.x..lr_tile.x + 1 {
-            for j in ul_tile.y..lr_tile.y + 1 {
+        for i in ul_tile.x..=lr_tile.x {
+            for j in ul_tile.y..=lr_tile.y {
                 tiles.push(Tile::new(i, j, target_zoom));
             }
         }
@@ -849,11 +863,11 @@ impl<'a> Tms<'a> {
         let bbox = self.xy_bounds(t);
         let res = self.resolution(&self.matrix(t.z)) / 10.0;
 
-        let ul_tile = self.tile_(bbox.left + res, bbox.top - res, target_zoom);
-        let lr_tile = self.tile_(bbox.right - res, bbox.bottom + res, target_zoom);
+        let ul_tile = self.xytile(bbox.left + res, bbox.top - res, target_zoom);
+        let lr_tile = self.xytile(bbox.right - res, bbox.bottom + res, target_zoom);
 
-        for i in ul_tile.x..lr_tile.x + 1 {
-            for j in ul_tile.y..lr_tile.y + 1 {
+        for i in ul_tile.x..=lr_tile.x {
+            for j in ul_tile.y..=lr_tile.y {
                 tiles.push(Tile::new(i, j, target_zoom));
             }
         }

@@ -141,19 +141,19 @@ fn morecantile_examples() {
 
     //let tms: Tms = tms().get("WebMercatorQuad").unwrap().into();
 
-    let tile = tms.tile(159.31, -42.0, 4, false);
+    let tile = tms.tile(159.31, -42.0, 4);
     assert_eq!(tile, Tile::new(15, 10, 4));
 
     // Or using coordinates in input CRS
-    let coord = tms.xy(159.31, -42.0, false);
+    let coord = tms.xy(159.31, -42.0);
     if cfg!(projtransform) {
         assert_eq!((coord.x, coord.y), (17734308.078276414, -5160979.444049783));
     } else {
         //assert_eq!((coord.x, coord.y), (17734308.078276414, -5160979.444049781));
     }
 
-    // tms.tile_(x, y, 4)
-    // >>> Tile(x=15, y=10, z=4)
+    let tile = tms.xytile(17734308.1, -5160979.4, 4);
+    assert_eq!(tile, Tile::new(15, 10, 4));
 }
 
 fn web_mercator_quad() -> TileMatrixSet {

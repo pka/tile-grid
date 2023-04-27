@@ -87,13 +87,13 @@ fn test_tms_properties() {
 fn test_tile_coordinates() {
     // Test coordinates to tile index utils.
     let tms: Tms = tms().get("WebMercatorQuad").unwrap().into();
-    assert_eq!(tms.tile(-179.0, 85.0, 5, false), Tile::new(0, 0, 5));
+    assert_eq!(tms.tile(-179.0, 85.0, 5), Tile::new(0, 0, 5));
 
     // Check equivalence between mercantile and morecantile
     // let wlon = 20.0;
     // let wlat = 15.0;
     // assert_eq!(tms.tile(20.0, 15.0, 5), mercantile::tile(20.0, 15.0, 5));
-    assert_eq!(tms.tile(20.0, 15.0, 5, false), Tile::new(17, 14, 5));
+    assert_eq!(tms.tile(20.0, 15.0, 5), Tile::new(17, 14, 5));
 }
 
 #[test]
@@ -227,7 +227,7 @@ fn test_xy_tile() {
     // x, y for the 486-332-10 tile is correctly calculated.
     let tms: Tms = tms().get("WebMercatorQuad").unwrap().into();
     let ul = tms.ul(&Tile::new(486, 332, 10));
-    let xy = tms.xy(ul.x, ul.y, false);
+    let xy = tms.xy(ul.x, ul.y);
     let expected = [-1017529.7205322663, 7044436.526761846];
     for (a, b) in zip(expected, [xy.x, xy.y]) {
         assert!((a - b).abs() < 0.0000001);
@@ -238,7 +238,7 @@ fn test_xy_tile() {
 fn test_xy_null_island() {
     // x, y for (0, 0) is correctly calculated
     let tms: Tms = tms().get("WebMercatorQuad").unwrap().into();
-    let xy = tms.xy(0.0, 0.0, false);
+    let xy = tms.xy(0.0, 0.0);
     let expected = [0.0, 0.0];
     for (a, b) in zip(expected, [xy.x, xy.y]) {
         assert!((a - b).abs() < 1e-7);
@@ -260,10 +260,7 @@ fn test_xy_north_pole() {
 fn test_xy_truncate() {
     // Input is truncated
     let tms: Tms = tms().get("WebMercatorQuad").unwrap().into();
-    assert_eq!(
-        tms.xy(-181.0, 0.0, true),
-        tms.xy(tms.bbox().left, 0.0, false)
-    );
+    assert_eq!(tms.xy_truncated(-181.0, 0.0), tms.xy(tms.bbox().left, 0.0));
 }
 
 #[test]
