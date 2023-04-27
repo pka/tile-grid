@@ -2,7 +2,7 @@ use crate::transform::Transform;
 use crate::Crs;
 use proj::Proj;
 
-pub type Transformer = Proj;
+pub type ProjTransformer = Proj;
 
 impl Transform for Proj {
     fn from_crs(from: &Crs, to: &Crs, _always_xy: bool) -> Self {
@@ -25,28 +25,8 @@ impl Transform for Proj {
     }
 }
 
-impl Transform for Option<Proj> {
-    fn from_crs(from: &Crs, to: &Crs, _always_xy: bool) -> Self {
-        Proj::new_known_crs(&from.as_known_crs(), &to.as_known_crs(), None).ok()
-    }
-    fn transform(&self, x: f64, y: f64) -> (f64, f64) {
-        if let Some(transform) = self {
-            transform.transform(x, y)
-        } else {
-            (x, y)
-        }
-    }
-    fn transform_bounds(
-        &self,
-        left: f64,
-        bottom: f64,
-        right: f64,
-        top: f64,
-    ) -> (f64, f64, f64, f64) {
-        if let Some(transform) = self {
-            transform.transform_bounds(left, bottom, right, top)
-        } else {
-            (left, bottom, right, top)
-        }
-    }
-}
+// impl Transform for Option<Proj> {
+//     fn from_crs(from: &Crs, to: &Crs, _always_xy: bool) -> Self {
+//         Proj::new_known_crs(&from.as_known_crs(), &to.as_known_crs(), None).ok()
+//     }
+// }

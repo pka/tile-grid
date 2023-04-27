@@ -5,6 +5,7 @@
 
 //!Tile grids
 
+pub use crate::transform::lonlat_to_merc;
 use std::f64::consts;
 
 /// Geographic extent
@@ -305,15 +306,6 @@ impl Grid {
             })
             .collect()
     }
-}
-
-/// Returns the Spherical Mercator (x, y) in meters
-pub fn lonlat_to_merc(lon: f64, lat: f64) -> (f64, f64) {
-    // from mod web_mercator in grid_test
-    //lng, lat = truncate_lnglat(lng, lat)
-    let x = 6378137.0 * lon.to_radians();
-    let y = 6378137.0 * ((consts::PI * 0.25) + (0.5 * lat.to_radians())).tan().ln();
-    (x, y)
 }
 
 /// Projected extent
