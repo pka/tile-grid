@@ -2,7 +2,7 @@ use crate::common::Crs;
 use crate::quadkey::{check_quadkey_support, meters_per_unit, point_in_bbox, DEFAULT_BBOX_PREC};
 use crate::tile::{BoundingBox, Coords, Tile};
 use crate::tile_matrix_set::{TileMatrix, TileMatrixSet};
-use crate::transform::{Transform, Transformer};
+use crate::transform::{merc_tile_ul, Transform, Transformer};
 use crate::TitleDescriptionKeywords;
 use std::num::NonZeroU64;
 
@@ -14,6 +14,7 @@ pub struct Tms<'a> {
     pub tms: &'a TileMatrixSet,
     pub is_quadtree: bool,
     // CRS transformation attributes
+    data_crs: Crs,
     geographic_crs: Crs, // default=WGS84_CRS
     to_geographic: Option<Transformer>,
     from_geographic: Option<Transformer>,
@@ -23,9 +24,10 @@ impl<'a> Tms<'a> {
     /// Prepare transformations and check if TileMatrixSet supports quadkeys.
     fn init(data: &'a TileMatrixSet) -> Self {
         let is_quadtree = check_quadkey_support(&data.tile_matrices);
+        let data_crs = data.crs.clone();
         let geographic_crs = Crs::default(); // data.get("_geographic_crs", WGS84_CRS)
-        let to_geographic = Some(Transformer::from_crs(&data.crs, &geographic_crs, true));
-        let from_geographic = Some(Transformer::from_crs(&geographic_crs, &data.crs, true));
+        let to_geographic = Some(Transformer::from_crs(&data_crs, &geographic_crs, true));
+        let from_geographic = Some(Transformer::from_crs(&geographic_crs, &data_crs, true));
         // except ProjError:
         //     warnings.warn(
         //         "Could not create coordinate Transformer from input CRS to the given geographic CRS"
@@ -34,6 +36,7 @@ impl<'a> Tms<'a> {
         Self {
             tms: data,
             is_quadtree,
+            data_crs,
             geographic_crs,
             to_geographic,
             from_geographic,
@@ -495,10 +498,13 @@ impl<'a> Tms<'a> {
     /// # Arguments
     /// * `tile` - (x, y, z) tile coordinates or a Tile object we want the upper left geographic coordinates of.
     pub fn ul(&self, tile: &Tile) -> Coords {
-        let t = tile; // parse_tile_arg(tile);
-
-        let xy = self.ul_(&t);
-        self.lnglat(xy.x, xy.y, false)
+        if self.data_crs.as_srid() == 3857 && self.geographic_crs.as_srid() == 4326 {
+            let (lon, lat) = merc_tile_ul(tile.x as u32, tile.y as u32, tile.z);
+            Coords::new(lon, lat)
+        } else {
+            let xy = self.ul_(tile);
+            self.lnglat(xy.x, xy.y, false)
+        }
     }
 
     /// Return the bounding box of the tile in geographic coordinate reference system.

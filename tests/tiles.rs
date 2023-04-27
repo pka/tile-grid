@@ -256,6 +256,7 @@ fn test_xy_north_pole() {
 }
 
 #[test]
+#[cfg(feature = "projtransform")]
 fn test_xy_truncate() {
     // Input is truncated
     let tms: Tms = tms().get("WebMercatorQuad").unwrap().into();
@@ -296,6 +297,7 @@ fn test_tile_truncate() {
 }
 
 #[test]
+#[cfg(feature = "projtransform")]
 fn test_tiles() {
     // Test tiles from bbox.
     let tms: Tms = tms().get("WebMercatorQuad").unwrap().into();
