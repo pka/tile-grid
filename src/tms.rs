@@ -150,8 +150,8 @@ impl TileMatrixSet {
 }
 
 #[derive(Debug)]
-pub struct TileMatrixSetInst {
-    pub tms: TileMatrixSet,
+pub struct TileMatrixSetInst<'a> {
+    pub tms: &'a TileMatrixSet,
     pub is_quadtree: bool,
     // CRS transformation attributes
     geographic_crs: Crs, // default=WGS84_CRS
@@ -159,9 +159,9 @@ pub struct TileMatrixSetInst {
     from_geographic: Option<Transformer>,
 }
 
-impl TileMatrixSetInst {
+impl<'a> TileMatrixSetInst<'a> {
     /// Create PyProj transforms and check if TileMatrixSet supports quadkeys.
-    pub fn init(data: TileMatrixSet) -> Self {
+    pub fn init(data: &'a TileMatrixSet) -> Self {
         let is_quadtree = check_quadkey_support(&data.tile_matrices);
         let geographic_crs = Crs::default(); // data.get("_geographic_crs", WGS84_CRS)
         let to_geographic = Some(Transformer::from_crs(&data.crs, &geographic_crs, true));
@@ -1001,4 +1001,10 @@ struct MinMax {
     x_max: i64,
     y_min: i64,
     y_max: i64,
+}
+
+impl<'a> From<&'a TileMatrixSet> for TileMatrixSetInst<'a> {
+    fn from(tms: &'a TileMatrixSet) -> Self {
+        TileMatrixSetInst::init(tms)
+    }
 }

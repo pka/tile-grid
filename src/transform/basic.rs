@@ -3,17 +3,25 @@ use crate::Crs;
 use std::f64::consts;
 
 #[derive(Debug)]
-pub struct BasicTransformer;
+pub struct BasicTransformer {
+    from: Crs,
+    to: Crs,
+}
 
 impl Transform for BasicTransformer {
     fn from_crs(from: &Crs, to: &Crs, _always_xy: bool) -> Self {
-        if from.as_srid() == 4326 && to.as_srid() == 3857 {
-            BasicTransformer {}
-        } else {
-            panic!("BasicTransformer does only support transforming WGS84 to Web Mercator");
+        match (from.as_srid(), to.as_srid()) {
+            (4326, 3857) | (3857, 4326) => BasicTransformer {
+                from: from.clone(),
+                to: to.clone(),
+            },
+            _ => {
+                panic!("BasicTransformer does only support transforming WGS84 to Web Mercator");
+            }
         }
     }
     fn transform(&self, x: f64, y: f64) -> (f64, f64) {
+        assert!(self.from.as_srid() == 4326 && self.to.as_srid() == 3857);
         lonlat_to_merc(x, y)
     }
     fn transform_bounds(
@@ -23,6 +31,7 @@ impl Transform for BasicTransformer {
         right: f64,
         top: f64,
     ) -> (f64, f64, f64, f64) {
+        assert!(self.from.as_srid() == 4326 && self.to.as_srid() == 3857);
         let (minx, miny) = lonlat_to_merc(left, top);
         let (maxx, maxy) = lonlat_to_merc(right, bottom);
         (minx, miny, maxx, maxy)

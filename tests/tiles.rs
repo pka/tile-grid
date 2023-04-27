@@ -72,8 +72,7 @@ fn test_default_grids() {
 #[test]
 fn test_tms_properties() {
     // Test TileSchema().
-    let registry = tms();
-    let tms = registry.get("WebMercatorQuad").unwrap();
+    let tms: TileMatrixSetInst = tms().get("WebMercatorQuad").unwrap().into();
     assert_eq!(tms.crs().to_urn(), "urn:ogc:def:crs:EPSG:0:3857");
     assert_eq!(meters_per_unit(tms.crs()), 1.0);
     assert_eq!(tms.minzoom(), 0);
@@ -83,8 +82,7 @@ fn test_tms_properties() {
 #[test]
 fn test_tile_coordinates() {
     // Test coordinates to tile index utils.
-    let registry = tms();
-    let tms = registry.get("WebMercatorQuad").unwrap();
+    let tms: TileMatrixSetInst = tms().get("WebMercatorQuad").unwrap().into();
     assert_eq!(tms.tile(-179.0, 85.0, 5, false), Tile::new(0, 0, 5));
 
     // Check equivalence between mercantile and morecantile
@@ -98,8 +96,7 @@ fn test_tile_coordinates() {
 fn test_bounds() {
     // TileMatrixSet.bounds should return the correct coordinates.
     let expected = [-9.140625, 53.12040528310657, -8.7890625, 53.33087298301705];
-    let registry = tms();
-    let tms = registry.get("WebMercatorQuad").unwrap();
+    let tms: TileMatrixSetInst = tms().get("WebMercatorQuad").unwrap().into();
     let bbox = tms.bounds(&Tile::new(486, 332, 10));
     for (a, b) in zip(expected, [bbox.left, bbox.bottom, bbox.right, bbox.top]) {
         assert_eq!(round_to_prec(a - b, 7).abs(), 0.0);
@@ -119,8 +116,7 @@ fn test_xy_bounds() {
         -978393.962050256,
         7044436.526761846,
     ];
-    let registry = tms();
-    let tms = registry.get("WebMercatorQuad").unwrap();
+    let tms: TileMatrixSetInst = tms().get("WebMercatorQuad").unwrap().into();
     let bounds = tms.xy_bounds(&Tile::new(486, 332, 10));
     for (a, b) in zip(
         expected,
@@ -132,8 +128,7 @@ fn test_xy_bounds() {
 
 #[test]
 fn test_ul_tile() {
-    let registry = tms();
-    let tms = registry.get("WebMercatorQuad").unwrap();
+    let tms: TileMatrixSetInst = tms().get("WebMercatorQuad").unwrap().into();
     let xy = tms.ul(&Tile::new(486, 332, 10));
     let expected = [-9.140625, 53.33087298301705];
     for (a, b) in zip(expected, [xy.x, xy.y]) {
@@ -149,8 +144,7 @@ fn round_to_prec(number: f64, precision: u8) -> f64 {
 #[test]
 fn test_projul_tile() {
     // TileMatrixSet._ul should return the correct coordinates in input projection.
-    let registry = tms();
-    let tms = registry.get("WebMercatorQuad").unwrap();
+    let tms: TileMatrixSetInst = tms().get("WebMercatorQuad").unwrap().into();
     let xy = tms.ul_(&Tile::new(486, 332, 10));
     let expected = [-1017529.7205322663, 7044436.526761846];
     for (a, b) in zip(expected, [xy.x, xy.y]) {
@@ -199,8 +193,7 @@ fn test_feature() {
 
 #[test]
 fn test_ul() {
-    let registry = tms();
-    let tms = registry.get("WebMercatorQuad").unwrap();
+    let tms: TileMatrixSetInst = tms().get("WebMercatorQuad").unwrap().into();
     let expected = [-9.140625, 53.33087298301705];
     let lnglat = tms.ul(&Tile::new(486, 332, 10));
     for (a, b) in zip(expected, [lnglat.x, lnglat.y]) {
@@ -213,8 +206,7 @@ fn test_ul() {
 #[test]
 fn test_bbox() {
     // test bbox.
-    let registry = tms();
-    let tms = registry.get("WebMercatorQuad").unwrap();
+    let tms: TileMatrixSetInst = tms().get("WebMercatorQuad").unwrap().into();
     let expected = [-9.140625, 53.12040528310657, -8.7890625, 53.33087298301705];
     let bbox = tms.bounds(&Tile::new(486, 332, 10));
     for (a, b) in zip(expected, [bbox.left, bbox.bottom, bbox.right, bbox.top]) {
@@ -229,8 +221,7 @@ fn test_bbox() {
 #[test]
 fn test_xy_tile() {
     // x, y for the 486-332-10 tile is correctly calculated.
-    let registry = tms();
-    let tms = registry.get("WebMercatorQuad").unwrap();
+    let tms: TileMatrixSetInst = tms().get("WebMercatorQuad").unwrap().into();
     let ul = tms.ul(&Tile::new(486, 332, 10));
     let xy = tms.xy(ul.x, ul.y, false);
     let expected = [-1017529.7205322663, 7044436.526761846];
@@ -242,8 +233,7 @@ fn test_xy_tile() {
 #[test]
 fn test_xy_null_island() {
     // x, y for (0, 0) is correctly calculated
-    let registry = tms();
-    let tms = registry.get("WebMercatorQuad").unwrap();
+    let tms: TileMatrixSetInst = tms().get("WebMercatorQuad").unwrap().into();
     let xy = tms.xy(0.0, 0.0, false);
     let expected = [0.0, 0.0];
     for (a, b) in zip(expected, [xy.x, xy.y]) {
@@ -264,8 +254,7 @@ fn test_xy_north_pole() {
 #[test]
 fn test_xy_truncate() {
     // Input is truncated
-    let registry = tms();
-    let tms = registry.get("WebMercatorQuad").unwrap();
+    let tms: TileMatrixSetInst = tms().get("WebMercatorQuad").unwrap().into();
     assert_eq!(
         tms.xy(-181.0, 0.0, true),
         tms.xy(tms.bbox().left, 0.0, false)
@@ -305,8 +294,7 @@ fn test_tile_truncate() {
 #[test]
 fn test_tiles() {
     // Test tiles from bbox.
-    let registry = tms();
-    let tms = registry.get("WebMercatorQuad").unwrap();
+    let tms: TileMatrixSetInst = tms().get("WebMercatorQuad").unwrap().into();
 
     let bounds = (-105.0, 39.99, -104.99, 40.0);
     let tiles = tms.tiles(bounds.0, bounds.1, bounds.2, bounds.3, &vec![14], false);
@@ -365,8 +353,7 @@ fn test_tiles_roundtrip() {
 #[test]
 fn test_extend_zoom() {
     // TileMatrixSet.ul should return the correct coordinates.
-    let registry = tms();
-    let tms = registry.get("WebMercatorQuad").unwrap();
+    let tms: TileMatrixSetInst = tms().get("WebMercatorQuad").unwrap().into();
 
     let merc = tms.xy_bounds(&Tile::new(1000, 1000, 25));
     let more = tms.xy_bounds(&Tile::new(1000, 1000, 25));
@@ -438,8 +425,7 @@ fn test_parent() {
 #[test]
 fn test_parent_multi() {
     // test parent
-    let registry = tms();
-    let tms = registry.get("WebMercatorQuad").unwrap();
+    let tms: TileMatrixSetInst = tms().get("WebMercatorQuad").unwrap().into();
     let parent = tms.parent(&Tile::new(486, 332, 10), Some(8));
     assert_eq!(parent[0], Tile::new(121, 83, 8));
 }
@@ -447,8 +433,7 @@ fn test_parent_multi() {
 #[test]
 fn test_children() {
     // test children.
-    let registry = tms();
-    let tms = registry.get("WebMercatorQuad").unwrap();
+    let tms: TileMatrixSetInst = tms().get("WebMercatorQuad").unwrap().into();
 
     let x = 243;
     let y = 166;
@@ -464,8 +449,7 @@ fn test_children() {
 #[test]
 fn test_children_multi() {
     // test children multizoom.
-    let registry = tms();
-    let tms = registry.get("WebMercatorQuad").unwrap();
+    let tms: TileMatrixSetInst = tms().get("WebMercatorQuad").unwrap().into();
 
     let children = tms.children(&Tile::new(243, 166, 9), Some(11));
     assert_eq!(children.len(), 16);

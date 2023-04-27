@@ -21,23 +21,21 @@ fn test_quadkey_support() {
     let registry = tms();
     for (name, result) in tests.into_iter() {
         dbg!(&name);
-        let tms = registry.get(name).unwrap();
+        let tms: TileMatrixSetInst = registry.get(name).unwrap().into();
         assert_eq!(tms.is_quadtree, result);
     }
 }
 
 #[test]
 fn test_quadkey() {
-    let registry = tms();
-    let tms = registry.get("WebMercatorQuad").unwrap();
+    let tms: TileMatrixSetInst = tms().get("WebMercatorQuad").unwrap().into();
     let expected = "0313102310".to_string();
     assert_eq!(tms.quadkey(Tile::new(486, 332, 10)), expected);
 }
 
 #[test]
 fn test_quadkey_to_tile() {
-    let registry = tms();
-    let tms = registry.get("WebMercatorQuad").unwrap();
+    let tms: TileMatrixSetInst = tms().get("WebMercatorQuad").unwrap().into();
     let qk = "0313102310".to_string();
     let expected = Tile::new(486, 332, 10);
     assert_eq!(tms.quadkey_to_tile(&qk), expected);
@@ -46,8 +44,7 @@ fn test_quadkey_to_tile() {
 #[test]
 fn test_empty_quadkey_to_tile() {
     // Empty qk should give tile 0,0,0.
-    let registry = tms();
-    let tms = registry.get("WebMercatorQuad").unwrap();
+    let tms: TileMatrixSetInst = tms().get("WebMercatorQuad").unwrap().into();
     let qk = "";
     let expected = Tile::new(0, 0, 0);
     assert_eq!(tms.quadkey_to_tile(qk), expected);

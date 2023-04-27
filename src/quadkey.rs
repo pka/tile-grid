@@ -86,7 +86,7 @@ pub(crate) fn check_quadkey_support(tms: &Vec<TileMatrix>) -> bool {
     })
 }
 
-impl TileMatrixSetInst {
+impl TileMatrixSetInst<'_> {
     /// Get the quadkey of a tile
     ///
     /// # Arguments
