@@ -1,6 +1,6 @@
+use serde_json::json;
+
 /// A xmin,ymin,xmax,ymax coordinates tuple.
-// Examples:
-// >>> BoundingBox(-180.0, -90.0, 180.0, 90.0)
 #[derive(Debug, Clone, PartialEq)]
 pub struct BoundingBox {
     /// min horizontal coordinate.
@@ -26,8 +26,6 @@ impl BoundingBox {
 }
 
 /// A x,y Coordinates pair.
-// Examples:
-// >>> Coords(-90.3, 10.5)
 #[derive(Debug, Clone, PartialEq)]
 pub struct Coords {
     /// horizontal coordinate input projection unit.
@@ -44,8 +42,6 @@ impl Coords {
 }
 
 /// TileMatrixSet X,Y,Z tile indices.
-// Examples:
-// >>> Tile(0, 0, 0)
 #[derive(Debug, Clone, PartialEq)]
 pub struct Tile {
     /// horizontal index.
@@ -61,4 +57,14 @@ impl Tile {
     pub fn new(x: i64, y: i64, z: u8) -> Self {
         Self { x, y, z }
     }
+}
+
+/// Create a GeoJSON feature from a bbox.
+pub fn bbox_to_feature(west: f64, south: f64, east: f64, north: f64) -> serde_json::Value {
+    json!({
+        "type": "Polygon",
+        "coordinates": [
+            [[west, south], [west, north], [east, north], [east, south], [west, south]]
+        ],
+    })
 }

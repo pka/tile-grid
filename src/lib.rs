@@ -54,7 +54,6 @@ mod transform;
 mod wmts;
 
 pub use common::*;
-pub use quadkey::*;
 pub use registry::*;
 pub use tile::*;
 pub use tile_matrix_set::*;

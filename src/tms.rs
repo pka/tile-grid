@@ -1,9 +1,10 @@
 use crate::common::Crs;
-use crate::quadkey::{check_quadkey_support, meters_per_unit, point_in_bbox, DEFAULT_BBOX_PREC};
+use crate::quadkey::check_quadkey_support;
 use crate::tile::{BoundingBox, Coords, Tile};
 use crate::tile_matrix_set::{TileMatrix, TileMatrixSet};
 use crate::transform::{merc_tile_ul, Transform, Transformer};
 use crate::TitleDescriptionKeywords;
+use std::f64::consts::PI;
 use std::num::NonZeroU64;
 
 const LL_EPSILON: f64 = 1e-11;
@@ -888,4 +889,42 @@ impl<'a> From<&'a TileMatrixSet> for Tms<'a> {
     fn from(tms: &'a TileMatrixSet) -> Self {
         Tms::init(tms)
     }
+}
+
+/// Coefficient to convert the coordinate reference system (CRS)
+/// units into meters (metersPerUnit).
+//
+// See http://docs.ogc.org/is/17-083r4/17-083r4.html#6-1-1-1-%C2%A0-tile-matrix-in-a-two-dimensional-space
+// From note g in <http://docs.opengeospatial.org/is/17-083r2/17-083r2.html#table_2>:
+//     If the CRS uses meters as units of measure for the horizontal dimensions,
+//     then metersPerUnit=1; if it has degrees, then metersPerUnit=2pa/360
+//     (a is the Earth maximum radius of the ellipsoid).
+pub fn meters_per_unit(crs: &Crs) -> f64 {
+    const SEMI_MAJOR_METRE: f64 = 6378137.0; /* crs.ellipsoid.semi_major_metre */
+    let unit_name = if crs.as_srid() == 4326 {
+        "degree" // FIXME: crs.axis_info[0].unit_name;
+    } else {
+        "metre"
+    };
+    match unit_name {
+        "metre" => 1.0,
+        "degree" => 2.0 * PI * SEMI_MAJOR_METRE / 360.0,
+        "foot" => 0.3048,
+        "US survey foot" => 0.30480060960121924,
+        _ => panic!("CRS {crs:?} with Unit Name `{}` is not supported, please fill an issue in developmentseed/morecantile", unit_name),
+    }
+}
+
+pub const DEFAULT_BBOX_PREC: u8 = 5;
+
+/// Check if a point is in a bounding box.
+pub fn point_in_bbox(point: Coords, bbox: BoundingBox, precision: u8 /* = 5 */) -> bool {
+    fn round_to_prec(number: f64, precision: u8) -> f64 {
+        let factor = 10.0_f64.powi(precision as i32);
+        (number * factor).round() / factor
+    }
+    round_to_prec(point.x, precision) >= round_to_prec(bbox.left, precision)
+        && round_to_prec(point.x, precision) <= round_to_prec(bbox.right, precision)
+        && round_to_prec(point.y, precision) >= round_to_prec(bbox.bottom, precision)
+        && round_to_prec(point.y, precision) <= round_to_prec(bbox.top, precision)
 }
