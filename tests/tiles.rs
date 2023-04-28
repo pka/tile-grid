@@ -338,20 +338,20 @@ fn test_tiles() {
     );
 }
 
-#[test]
-fn test_global_tiles_clamped() {
-    // Y is clamped to (0, 2 ** zoom - 1).
-}
+// #[test]
+// fn test_global_tiles_clamped() {
+//     // Y is clamped to (0, 2 ** zoom - 1).
+// }
 
-#[test]
-fn test_tiles_roundtrip_children() {
-    // tiles(bounds(tile)) gives the tile's children
-}
+// #[test]
+// fn test_tiles_roundtrip_children() {
+//     // tiles(bounds(tile)) gives the tile's children
+// }
 
-#[test]
-fn test_tiles_roundtrip() {
-    // Tiles(bounds(tile)) gives the tile.
-}
+// #[test]
+// fn test_tiles_roundtrip() {
+//     // Tiles(bounds(tile)) gives the tile.
+// }
 
 #[test]
 fn test_extend_zoom() {
@@ -395,35 +395,35 @@ fn test_extend_zoom() {
     }
 }
 
-#[test]
-fn test_is_power_of_two() {
-    // is power ot 2?
-}
+// #[test]
+// fn test_is_power_of_two() {
+//     // is power ot 2?
+// }
 
-#[test]
-fn test_is_valid_tile() {
-    // test if tile are valid.
-}
+// #[test]
+// fn test_is_valid_tile() {
+//     // test if tile are valid.
+// }
 
-#[test]
-fn test_neighbors() {
-    // test neighbors.
-}
+// #[test]
+// fn test_neighbors() {
+//     // test neighbors.
+// }
 
-#[test]
-fn test_neighbors_invalid() {
-    // test neighbors.
-}
+// #[test]
+// fn test_neighbors_invalid() {
+//     // test neighbors.
+// }
 
-#[test]
-fn test_root_neighbors_invalid() {
-    // test neighbors.
-}
+// #[test]
+// fn test_root_neighbors_invalid() {
+//     // test neighbors.
+// }
 
-#[test]
-fn test_parent() {
-    // test parent
-}
+// #[test]
+// fn test_parent() {
+//     // test parent
+// }
 
 #[test]
 fn test_parent_multi() {
@@ -479,7 +479,7 @@ fn test_children_multi() {
     }
 }
 
-#[test]
-fn test_children_invalid_zoom() {
-    // invalid zoom.
-}
+// #[test]
+// fn test_children_invalid_zoom() {
+//     // invalid zoom.
+// }
