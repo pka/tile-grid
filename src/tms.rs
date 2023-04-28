@@ -33,6 +33,7 @@ impl<'a> Tms<'a> {
         //         "Could not create coordinate Transformer from input CRS to the given geographic CRS"
         //         "some methods might not be available.",
         //         UserWarning,
+        // sort_tile_matrices(data.tile_matrices) ?
         Self {
             tms: data,
             is_quadtree,

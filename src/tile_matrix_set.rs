@@ -4,11 +4,11 @@ use serde::{Deserialize, Serialize};
 use serde_with::DisplayFromStr;
 use std::num::NonZeroU64;
 
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct TileMatrixSets {
-    pub tile_matrix_sets: Vec<TileMatrixSetItem>,
-}
+// #[derive(Serialize)]
+// #[serde(rename_all = "camelCase")]
+// pub struct TileMatrixSets {
+//     pub tile_matrix_sets: Vec<TileMatrixSetItem>,
+// }
 
 /// A minimal tile matrix set element for use within a list of tile matrix
 /// sets linking to a full definition.

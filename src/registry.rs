@@ -2,8 +2,9 @@ use crate::tile_matrix_set::TileMatrixSet;
 use once_cell::sync::OnceCell;
 use std::collections::HashMap;
 
+/// Registry of tile matrix sets
 pub struct TileMatrixSets {
-    // Registry containing TileMatrixSetsImpl not supported because of Proj:
+    // Registry containing Tms is not supported because of Proj:
     // trait `Send` is not implemented for `*mut proj_sys::PJ_AREA`
     coll: HashMap<String, TileMatrixSet>,
 }
