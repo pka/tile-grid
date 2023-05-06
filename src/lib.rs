@@ -50,6 +50,7 @@ mod tile;
 mod tile_matrix_set;
 mod tileset;
 mod tms;
+mod tms_iterator;
 mod transform;
 mod wmts;
 
@@ -59,6 +60,7 @@ pub use tile::*;
 pub use tile_matrix_set::*;
 pub use tileset::*;
 pub use tms::*;
+pub use tms_iterator::*;
 pub use wmts::*;
 
 use serde::{Deserialize, Serialize};

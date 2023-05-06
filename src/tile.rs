@@ -45,7 +45,7 @@ impl Coords {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Tile {
     /// horizontal index.
-    pub x: i64,
+    pub x: i64, // TODO: check type (u32?)
     /// verctical index.
     pub y: i64,
     /// zoom level.

@@ -45,7 +45,7 @@ impl GridIterator {
 }
 
 impl Iterator for GridIterator {
-    /// Current cell index `(z, y, x)`
+    /// Current cell index `(z, x, y)`
     type Item = (u8, u32, u32);
 
     fn next(&mut self) -> Option<Self::Item> {

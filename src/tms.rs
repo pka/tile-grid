@@ -2,6 +2,7 @@ use crate::common::Crs;
 use crate::quadkey::check_quadkey_support;
 use crate::tile::{BoundingBox, Coords, Tile};
 use crate::tile_matrix_set::{TileMatrix, TileMatrixSet};
+use crate::tms_iterator::XyzIterator;
 use crate::transform::{merc_tile_ul, Transform, Transformer};
 use crate::TitleDescriptionKeywords;
 use std::f64::consts::PI;
@@ -93,6 +94,7 @@ impl<'a> Tms<'a> {
             .parse::<u8>()
             .unwrap()
     }
+
     /// Check if CRS has inverted AXIS (lat,lon) instead of (lon,lat).
     fn invert_axis(&self) -> bool {
         self.tms.crs_axis_inverted()
@@ -649,6 +651,83 @@ impl<'a> Tms<'a> {
         tiles.into_iter()
     }
 
+    /// Get the tile limits overlapped by a geographic bounding box
+    fn extent_limits(
+        &self,
+        extend: &BoundingBox,
+        minzoom: u8,
+        maxzoom: u8,
+        truncate: bool, /* = False */
+    ) -> Vec<MinMax> {
+        if extend.left > extend.right || minzoom > maxzoom {
+            return Vec::new();
+        }
+        let bbox = self.bbox();
+        let get_tile = if truncate {
+            Tms::tile_truncated
+        } else {
+            Tms::tile
+        };
+        let w = extend.left.max(bbox.left);
+        let s = extend.bottom.max(bbox.bottom);
+        let e = extend.right.min(bbox.right);
+        let n = extend.top.min(bbox.top);
+        (minzoom..=maxzoom)
+            .map(|z| {
+                let ul_tile = get_tile(self, w + LL_EPSILON, n - LL_EPSILON, z);
+                let lr_tile = get_tile(self, e - LL_EPSILON, s + LL_EPSILON, z);
+                MinMax {
+                    x_min: ul_tile.x,
+                    x_max: lr_tile.x,
+                    y_min: ul_tile.y,
+                    y_max: lr_tile.y,
+                }
+            })
+            .collect()
+    }
+
+    /// Get the tile limits overlapped by a bounding box in TMS CRS
+    fn extent_limits_xy(&self, extend: &BoundingBox, minzoom: u8, maxzoom: u8) -> Vec<MinMax> {
+        if extend.left > extend.right || minzoom > maxzoom {
+            return Vec::new();
+        }
+        let bbox = self.xy_bbox();
+        let w = extend.left.max(bbox.left);
+        let s = extend.bottom.max(bbox.bottom);
+        let e = extend.right.min(bbox.right);
+        let n = extend.top.min(bbox.top);
+        (minzoom..=maxzoom)
+            .map(|z| {
+                let res = self.resolution(&self.matrix(z)) / 10.0;
+                let ul_tile = self.xytile(w + res, n - res, z);
+                let lr_tile = self.xytile(e - res, s + res, z);
+                MinMax {
+                    x_min: ul_tile.x,
+                    x_max: lr_tile.x,
+                    y_min: ul_tile.y,
+                    y_max: lr_tile.y,
+                }
+            })
+            .collect()
+    }
+
+    /// Get iterator over all tiles overlapped by a geographic bounding box
+    pub fn xyz_iterator_geographic(
+        &self,
+        extend: &BoundingBox,
+        minzoom: u8,
+        maxzoom: u8,
+    ) -> XyzIterator {
+        let limits = self.extent_limits(extend, minzoom, maxzoom, false);
+        XyzIterator::new(minzoom, maxzoom, limits)
+    }
+
+    /// Get iterator over all tiles overlapped by a bounding box in TMS CRS
+    pub fn xyz_iterator(&self, extend: &BoundingBox, minzoom: u8, maxzoom: u8) -> XyzIterator {
+        let limits = self.extent_limits_xy(extend, minzoom, maxzoom);
+        XyzIterator::new(minzoom, maxzoom, limits)
+    }
+
     // def feature(
     //     self,
     //     tile: Tile,
@@ -878,11 +957,12 @@ impl<'a> Tms<'a> {
     }
 }
 
-struct MinMax {
-    x_min: i64,
-    x_max: i64,
-    y_min: i64,
-    y_max: i64,
+#[derive(Debug)]
+pub(crate) struct MinMax {
+    pub x_min: i64,
+    pub x_max: i64,
+    pub y_min: i64,
+    pub y_max: i64,
 }
 
 impl<'a> From<&'a TileMatrixSet> for Tms<'a> {
