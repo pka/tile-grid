@@ -45,16 +45,16 @@ impl Coords {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Tile {
     /// horizontal index.
-    pub x: i64, // TODO: check type (u32?)
+    pub x: u64,
     /// verctical index.
-    pub y: i64,
+    pub y: u64,
     /// zoom level.
     pub z: u8,
 }
 
 impl Tile {
     /// Create a new Tile.
-    pub fn new(x: i64, y: i64, z: u8) -> Self {
+    pub fn new(x: u64, y: u64, z: u8) -> Self {
         Self { x, y, z }
     }
 }

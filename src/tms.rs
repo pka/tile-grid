@@ -446,7 +446,7 @@ impl Tms {
             ytile
         };
 
-        Tile::new(xtile as i64, ytile as i64, zoom)
+        Tile::new(xtile, ytile, zoom)
     }
 
     /// Get the tile for a given geographic longitude and latitude pair.
@@ -528,7 +528,7 @@ impl Tms {
         let t = tile; // parse_tile_arg(tile);
 
         let top_left = self.ul(t);
-        let bottom_right = self.ul(&Tile::new((t.x + 1) as i64, (t.y + 1) as i64, t.z));
+        let bottom_right = self.ul(&Tile::new(t.x + 1, t.y + 1, t.z));
         BoundingBox::new(top_left.x, bottom_right.y, bottom_right.x, top_left.y)
     }
 
@@ -562,8 +562,8 @@ impl Tms {
             let matrix = self.matrix(zoom);
             let top_left = self.ul_(&Tile::new(0, 0, zoom));
             let bottom_right = self.ul_(&Tile::new(
-                u64::from(matrix.matrix_width) as i64,
-                u64::from(matrix.matrix_height) as i64,
+                u64::from(matrix.matrix_width),
+                u64::from(matrix.matrix_height),
                 zoom,
             ));
             (top_left.x, bottom_right.y, bottom_right.x, top_left.y)
@@ -823,9 +823,9 @@ impl Tms {
         let m = self.matrix(zoom);
         MinMax {
             x_min: 0,
-            x_max: (u64::from(m.matrix_width) - 1) as i64,
+            x_max: u64::from(m.matrix_width).saturating_sub(1),
             y_min: 0,
-            y_max: (u64::from(m.matrix_height) - 1) as i64,
+            y_max: u64::from(m.matrix_height).saturating_sub(1),
         }
     }
 
@@ -859,17 +859,17 @@ impl Tms {
         let extrema = self.minmax(t.z);
 
         let mut tiles = Vec::new();
-        for i in -1..=1 {
-            for j in -1..=1 {
-                if i == 0 && j == 0 {
+        for x in t.x.saturating_sub(1)..=t.x.saturating_add(1) {
+            for y in t.y.saturating_sub(1)..=t.y.saturating_add(1) {
+                if x == t.x && y == t.y {
                     continue;
-                } else if t.x + i < extrema.x_min || t.y + j < extrema.y_min {
+                } else if x < extrema.x_min || y < extrema.y_min {
                     continue;
-                } else if t.x + i > extrema.x_max || t.y + j > extrema.y_max {
+                } else if x > extrema.x_max || y > extrema.y_max {
                     continue;
                 }
 
-                tiles.push(Tile::new(t.x + i, t.y + j, t.z));
+                tiles.push(Tile::new(x, y, t.z));
             }
         }
 
@@ -959,10 +959,10 @@ impl Tms {
 
 #[derive(Debug)]
 pub(crate) struct MinMax {
-    pub x_min: i64,
-    pub x_max: i64,
-    pub y_min: i64,
-    pub y_max: i64,
+    pub x_min: u64,
+    pub x_max: u64,
+    pub y_min: u64,
+    pub y_max: u64,
 }
 
 impl From<TileMatrixSet> for Tms {
