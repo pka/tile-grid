@@ -120,19 +120,14 @@ impl Default for CornerOfOrigin {
     }
 }
 
-#[cfg(test)]
-mod test {
-    use super::TileMatrixSet;
-
-    #[test]
-    fn parse_tms_example() {
-        let content = std::fs::read_to_string("./data/WebMercatorQuad.json").unwrap();
-        let tms: TileMatrixSet = serde_json::from_str(&content).unwrap();
-        println!("{}", serde_json::to_string_pretty(&tms).unwrap());
-    }
-}
-
 impl TileMatrixSet {
+    pub fn from_json_file(json_path: &str) -> Result<Self, serde_json::Error> {
+        let content = std::fs::read_to_string(json_path).unwrap();
+        TileMatrixSet::from_json(&content)
+    }
+    pub fn from_json(json: &str) -> Result<Self, serde_json::Error> {
+        serde_json::from_str(&json)
+    }
     /// Check if CRS has inverted AXIS (lat,lon) instead of (lon,lat).
     pub(crate) fn crs_axis_inverted(&self) -> bool {
         if let Some(axes) = &self.ordered_axes {
@@ -140,5 +135,16 @@ impl TileMatrixSet {
         } else {
             false // TODO: Check CRS axis ordering
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::TileMatrixSet;
+
+    #[test]
+    fn parse_tms_example() {
+        let tms = TileMatrixSet::from_json_file("./data/WebMercatorQuad.json").unwrap();
+        println!("{}", serde_json::to_string_pretty(&tms).unwrap());
     }
 }
