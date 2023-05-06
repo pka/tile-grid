@@ -12,8 +12,8 @@ const LL_EPSILON: f64 = 1e-11;
 
 /// Tile Matrix Set API.
 #[derive(Debug)]
-pub struct Tms<'a> {
-    pub tms: &'a TileMatrixSet,
+pub struct Tms {
+    pub tms: TileMatrixSet,
     pub is_quadtree: bool,
     // CRS transformation attributes
     data_crs: Crs,
@@ -22,9 +22,9 @@ pub struct Tms<'a> {
     from_geographic: Option<Transformer>,
 }
 
-impl<'a> Tms<'a> {
+impl Tms {
     /// Prepare transformations and check if TileMatrixSet supports quadkeys.
-    fn init(data: &'a TileMatrixSet) -> Self {
+    fn init(data: TileMatrixSet) -> Self {
         let is_quadtree = check_quadkey_support(&data.tile_matrices);
         let data_crs = data.crs.clone();
         let geographic_crs = Crs::default(); // data.get("_geographic_crs", WGS84_CRS)
@@ -965,9 +965,15 @@ pub(crate) struct MinMax {
     pub y_max: i64,
 }
 
-impl<'a> From<&'a TileMatrixSet> for Tms<'a> {
-    fn from(tms: &'a TileMatrixSet) -> Self {
+impl From<TileMatrixSet> for Tms {
+    fn from(tms: TileMatrixSet) -> Self {
         Tms::init(tms)
+    }
+}
+
+impl<'a> From<&'a TileMatrixSet> for Tms {
+    fn from(tms: &'a TileMatrixSet) -> Self {
+        Tms::init(tms.clone())
     }
 }
 

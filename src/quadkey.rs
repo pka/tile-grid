@@ -14,7 +14,7 @@ pub(crate) fn check_quadkey_support(tms: &Vec<TileMatrix>) -> bool {
     })
 }
 
-impl Tms<'_> {
+impl Tms {
     /// Get the quadkey of a tile
     ///
     /// # Arguments
