@@ -1,4 +1,5 @@
 use crate::tile_matrix_set::TileMatrixSet;
+use crate::tms::Tms;
 use once_cell::sync::OnceCell;
 use std::collections::HashMap;
 
@@ -9,6 +10,16 @@ pub struct TileMatrixSets {
     coll: HashMap<String, TileMatrixSet>,
 }
 
+#[derive(thiserror::Error, Debug)]
+pub enum Error {
+    #[error("Tile Matrix set not found: `{0}`")]
+    TmsNotFound(String),
+    #[error("`{0}` is already a registered TMS")]
+    TmsAlreadyRegistered(String),
+    #[error(transparent)]
+    TmsError(#[from] crate::tms::Error),
+}
+
 impl TileMatrixSets {
     fn new() -> Self {
         Self {
@@ -16,26 +27,35 @@ impl TileMatrixSets {
         }
     }
 
-    pub fn get(&self, id: &str) -> Option<&TileMatrixSet> {
-        self.coll.get(id)
+    pub fn get(&self, id: &str) -> Result<&TileMatrixSet, Error> {
+        self.coll.get(id).ok_or(Error::TmsNotFound(id.to_string()))
+    }
+
+    pub fn lookup(&self, id: &str) -> Result<Tms, Error> {
+        self.get(id)?.into_tms().map_err(Into::into)
     }
 
     pub fn list(&self) -> impl Iterator<Item = &String> {
         self.coll.keys().into_iter()
     }
 
-    pub fn register(&mut self, custom_tms: Vec<TileMatrixSet>, overwrite: bool) {
+    pub fn register(
+        &mut self,
+        custom_tms: Vec<TileMatrixSet>,
+        overwrite: bool,
+    ) -> Result<(), Error> {
         for tms in custom_tms {
             if self.coll.contains_key(&tms.id) {
                 if overwrite {
                     self.coll.insert(tms.id.clone(), tms);
                 } else {
-                    panic!("{} is already a registered TMS.", &tms.id)
+                    return Err(Error::TmsAlreadyRegistered(tms.id));
                 }
             } else {
                 self.coll.insert(tms.id.clone(), tms);
             }
         }
+        Ok(())
     }
 }
 
@@ -43,7 +63,6 @@ impl TileMatrixSets {
 pub fn tms() -> &'static TileMatrixSets {
     static TMS: OnceCell<TileMatrixSets> = OnceCell::new();
     &TMS.get_or_init(|| {
-        const WEB_MERCARTOR_QUAD: &[u8; 7744] = include_bytes!("../data/WebMercatorQuad.json");
         let mut sets = TileMatrixSets::new();
         let tms = vec![
             #[cfg(feature = "projtransform")]
@@ -64,12 +83,9 @@ pub fn tms() -> &'static TileMatrixSets {
             include_str!("../data/WorldMercatorWGS84Quad.json"),
         ]
         .into_iter()
-        .map(|data| {
-            let tms: TileMatrixSet = serde_json::from_str(data).unwrap();
-            tms
-        })
+        .map(|data| TileMatrixSet::from_json(&data).unwrap())
         .collect::<Vec<_>>();
-        sets.register(tms, false);
+        sets.register(tms, false).unwrap();
         // user_tms_dir = os.environ.get("TILEMATRIXSET_DIRECTORY", None)
         // if user_tms_dir:
         //     tms_paths.extend(list(pathlib.Path(user_tms_dir).glob("*.json")))

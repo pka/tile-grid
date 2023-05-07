@@ -75,11 +75,11 @@ impl Iterator for XyzIterator {
 
 #[cfg(test)]
 mod test {
-    use crate::{tms, Tile, Tms};
+    use crate::{tms, Tile};
 
     #[test]
     fn test_mercator_iter() {
-        let tms: Tms = tms().get("WebMercatorQuad").unwrap().into();
+        let tms = tms().lookup("WebMercatorQuad").unwrap();
         let griditer = tms.xyz_iterator(&tms.xy_bbox(), 0, 2);
         let cells = griditer.collect::<Vec<_>>();
         assert_eq!(

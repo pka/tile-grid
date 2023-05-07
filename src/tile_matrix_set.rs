@@ -3,6 +3,7 @@ use crate::{BoundingBox2D, Point2D, TitleDescriptionKeywords};
 use serde::{Deserialize, Serialize};
 use serde_with::DisplayFromStr;
 use std::num::NonZeroU64;
+use std::path::PathBuf;
 
 // #[derive(Serialize)]
 // #[serde(rename_all = "camelCase")]
@@ -120,13 +121,22 @@ impl Default for CornerOfOrigin {
     }
 }
 
+#[derive(thiserror::Error, Debug)]
+pub enum Error {
+    #[error(transparent)]
+    JsonError(#[from] serde_json::Error),
+    #[error("{0}: {1}")]
+    FileError(PathBuf, #[source] std::io::Error),
+}
+
 impl TileMatrixSet {
-    pub fn from_json_file(json_path: &str) -> Result<Self, serde_json::Error> {
-        let content = std::fs::read_to_string(json_path).unwrap();
+    pub fn from_json_file(json_path: &str) -> Result<Self, Error> {
+        let content = std::fs::read_to_string(json_path)
+            .map_err(|e| Error::FileError(json_path.into(), e))?;
         TileMatrixSet::from_json(&content)
     }
-    pub fn from_json(json: &str) -> Result<Self, serde_json::Error> {
-        serde_json::from_str(&json)
+    pub fn from_json(json: &str) -> Result<Self, Error> {
+        serde_json::from_str(&json).map_err(Into::into)
     }
     /// Check if CRS has inverted AXIS (lat,lon) instead of (lon,lat).
     pub(crate) fn crs_axis_inverted(&self) -> bool {

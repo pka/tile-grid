@@ -1,4 +1,4 @@
-use crate::transform::Transform;
+use crate::transform::{Error, Result, Transform};
 use crate::Crs;
 use std::f64::consts;
 
@@ -9,25 +9,30 @@ pub struct BasicTransformer {
 }
 
 impl Transform for BasicTransformer {
-    fn from_crs(from: &Crs, to: &Crs, _always_xy: bool) -> Self {
+    fn from_crs(from: &Crs, to: &Crs, _always_xy: bool) -> Result<Self> {
         match (from.as_srid(), to.as_srid()) {
             (4326, 3857) | (3857, 4326) | (4326, 4326) | (3395, 4326) | (4326, 3395) => {
-                BasicTransformer {
+                Ok(BasicTransformer {
                     from: from.clone(),
                     to: to.clone(),
-                }
+                })
             }
-            (a, b) => {
-                panic!("BasicTransformer does only support transforming WGS84 to Web Mercator ({:?} -> {to:?}) - ({a}->{b}", from);
+            (_a, _b) => {
+                return Err(Error::TransformationUnsupported(from.clone(), to.clone()));
             }
         }
     }
-    fn transform(&self, x: f64, y: f64) -> (f64, f64) {
+    fn transform(&self, x: f64, y: f64) -> Result<(f64, f64)> {
         if self.from.as_srid() == self.to.as_srid() {
-            return (x, y);
+            return Ok((x, y));
         }
-        assert!(self.from.as_srid() == 4326 && self.to.as_srid() == 3857);
-        lonlat_to_merc(x, y)
+        if self.from.as_srid() != 4326 || self.to.as_srid() != 3857 {
+            return Err(Error::TransformationUnsupported(
+                self.from.clone(),
+                self.to.clone(),
+            ));
+        }
+        Ok(lonlat_to_merc(x, y))
     }
     fn transform_bounds(
         &self,
@@ -35,14 +40,19 @@ impl Transform for BasicTransformer {
         bottom: f64,
         right: f64,
         top: f64,
-    ) -> (f64, f64, f64, f64) {
+    ) -> Result<(f64, f64, f64, f64)> {
         if self.from.as_srid() == self.to.as_srid() {
-            return (left, bottom, right, top);
+            return Ok((left, bottom, right, top));
         }
-        assert!(self.from.as_srid() == 4326 && self.to.as_srid() == 3857);
+        if self.from.as_srid() != 4326 || self.to.as_srid() != 3857 {
+            return Err(Error::TransformationUnsupported(
+                self.from.clone(),
+                self.to.clone(),
+            ));
+        }
         let (minx, miny) = lonlat_to_merc(left, top);
         let (maxx, maxy) = lonlat_to_merc(right, bottom);
-        (minx, miny, maxx, maxy)
+        Ok((minx, miny, maxx, maxy))
     }
 }
 

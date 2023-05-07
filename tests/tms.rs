@@ -24,17 +24,16 @@ fn test_tile_matrix_set() {
     for tileset in tilesets {
         // let ts = TileMatrixSet::parse_file(tilesets).unwrap();
         let data = std::fs::read_to_string(tileset).unwrap();
-        let tms: &TileMatrixSet = &serde_json::from_str(&data).unwrap();
-        let ts: Tms = tms.into();
+        let tms = TileMatrixSet::from_json(&data).unwrap().into_tms().unwrap();
         // This would fail if `supportedCRS` isn't supported by PROJ
-        assert!(ts.crs().as_known_crs().len() > 0);
+        assert!(tms.crs().as_known_crs().len() > 0);
     }
 }
 
 #[test]
 fn test_tile_matrix_iter() {
     // Test iterator
-    let tms: Tms = tms().get("WebMercatorQuad").unwrap().into();
+    let tms = tms().lookup("WebMercatorQuad").unwrap();
     assert_eq!(tms.matrices().len(), 25);
 }
 
@@ -114,7 +113,7 @@ fn test_tile_matrix_iter() {
 
 #[test]
 fn morecantile_examples() {
-    let tms: Tms = tms().get("WebMercatorQuad").unwrap().into();
+    let tms = tms().lookup("WebMercatorQuad").unwrap();
 
     // Get the bounds for tile Z=4, X=10, Y=10 in the input projection
     let bounds = tms.xy_bounds(&Tile::new(10, 10, 4));
@@ -130,7 +129,7 @@ fn morecantile_examples() {
     //>>> BoundingBox(left=5009377.085697308, bottom=-7514065.628545959, right=7514065.628545959, top=-5009377.085697308)
 
     // Get the bounds for tile Z=4, X=10, Y=10 in LatLon (WGS84)
-    let bounds = tms.bounds(&Tile::new(10, 10, 4));
+    let bounds = tms.bounds(&Tile::new(10, 10, 4)).unwrap();
     assert_eq!(
         bounds,
         BoundingBox::new(45.0, -55.77657301866769, 67.5, -40.97989806962013)
@@ -139,13 +138,13 @@ fn morecantile_examples() {
 
     // Find tile for lat/lon
 
-    //let tms: Tms = tms().get("WebMercatorQuad").unwrap().into();
+    //let tms= tms().lookup("WebMercatorQuad").unwrap();
 
-    let tile = tms.tile(159.31, -42.0, 4);
+    let tile = tms.tile(159.31, -42.0, 4).unwrap();
     assert_eq!(tile, Tile::new(15, 10, 4));
 
     // Or using coordinates in input CRS
-    let coord = tms.xy(159.31, -42.0);
+    let coord = tms.xy(159.31, -42.0).unwrap();
     if cfg!(projtransform) {
         assert_eq!((coord.x, coord.y), (17734308.078276414, -5160979.444049783));
     } else {

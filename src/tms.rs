@@ -8,8 +8,6 @@ use crate::TitleDescriptionKeywords;
 use std::f64::consts::PI;
 use std::num::NonZeroU64;
 
-const LL_EPSILON: f64 = 1e-11;
-
 /// Tile Matrix Set API.
 #[derive(Debug)]
 pub struct Tms {
@@ -22,40 +20,79 @@ pub struct Tms {
     from_geographic: Option<Transformer>,
 }
 
+#[derive(thiserror::Error, Debug)]
+pub enum Error {
+    #[error("Invalid tile zoom identifier: `{0}`")]
+    InvalidZoomId(String),
+    #[error("Invalid strategy: `{0}`. Should be one of lower|upper|auto")]
+    InvalidZoomLevelStrategy(String),
+    #[error("Invalid zoom level: `{0}`")]
+    InvalidZoom(u8),
+    #[error("Point ({0}, {1}) is outside bounds {2:?}")]
+    PointOutsideBounds(f64, f64, BoundingBox),
+    #[error(transparent)]
+    TransformationError(#[from] crate::transform::Error),
+    // #[error("Raised when math errors occur beyond ~85 degrees N or S")]
+    // InvalidLatitudeError,
+    // #[error("TileMatrix not found for level: {0} - Unable to construct tileMatrix for TMS with variable scale")]
+    // InvalidZoomError(u8),
+    // #[error("Raised when errors occur in parsing a function's tile arg(s)")]
+    // TileArgParsingError,
+    // #[error("Raised when a custom TileMatrixSet doesn't support quadkeys")]
+    // NoQuadkeySupport,
+    // #[error("Raised when errors occur in computing or parsing quad keys")]
+    // QuadKeyError,
+}
+
+pub type Result<T> = std::result::Result<T, Error>;
+
 impl Tms {
     /// Prepare transformations and check if TileMatrixSet supports quadkeys.
-    fn init(data: TileMatrixSet) -> Self {
+    pub(crate) fn init(data: &TileMatrixSet) -> Result<Self> {
         let is_quadtree = check_quadkey_support(&data.tile_matrices);
         let data_crs = data.crs.clone();
         let geographic_crs = Crs::default(); // data.get("_geographic_crs", WGS84_CRS)
-        let to_geographic = Some(Transformer::from_crs(&data_crs, &geographic_crs, true));
-        let from_geographic = Some(Transformer::from_crs(&geographic_crs, &data_crs, true));
+        let to_geographic = Some(Transformer::from_crs(&data_crs, &geographic_crs, true)?);
+        let from_geographic = Some(Transformer::from_crs(&geographic_crs, &data_crs, true)?);
         // except ProjError:
         //     warnings.warn(
         //         "Could not create coordinate Transformer from input CRS to the given geographic CRS"
         //         "some methods might not be available.",
         //         UserWarning,
-        // sort_tile_matrices(data.tile_matrices) ?
-        Self {
-            tms: data,
+        let mut tms = data.clone();
+        Self::sort_tile_matrices(&mut tms)?;
+        // Check bounding box CRS (TODO: should we store it?)
+        if let Some(bounding_box) = &tms.bounding_box {
+            if let Some(crs) = &bounding_box.crs {
+                if *crs != tms.crs {
+                    // TODO: return Err() if bounding_box.crs -> tms.crs not supported
+                    // let transform = Transformer::from_crs(crs, tms.crs, true)?;
+                }
+            }
+        }
+        Ok(Self {
+            tms,
             is_quadtree,
             data_crs,
             geographic_crs,
             to_geographic,
             from_geographic,
-        }
+        })
     }
 
-    // @validator("tileMatrix")
     /// Sort matrices by identifier
-    fn sort_tile_matrices(v: Vec<TileMatrix>) -> Vec<TileMatrix> {
-        let mut v = v.clone();
-        v.sort_by(|a, b| {
+    fn sort_tile_matrices(tms: &mut TileMatrixSet) -> Result<()> {
+        // Check zoom identifier format
+        for m in &tms.tile_matrices {
+            m.id.parse::<u8>()
+                .map_err(|_e| Error::InvalidZoomId(m.id.clone()))?;
+        }
+        tms.tile_matrices.sort_by(|a, b| {
             a.id.parse::<u8>()
                 .unwrap()
                 .cmp(&b.id.parse::<u8>().unwrap())
         });
-        v
+        Ok(())
     }
 
     /// Iterate over matrices
@@ -63,25 +100,10 @@ impl Tms {
         &self.tms.tile_matrices
     }
 
-    // def __repr__(self):
-    //     """Simplify default pydantic model repr."""
-    //     return f"<TileMatrixSet title='{self.title}' identifier='{self.identifier}'>"
-
     /// Fetch CRS from epsg
     pub fn crs(&self) -> &Crs {
         &self.tms.crs
     }
-
-    // def rasterio_crs(self):
-    //     """Return rasterio CRS."""
-    //
-    //     import rasterio
-    //     from rasterio.env import GDALVersion
-    //
-    //     if GDALVersion.runtime().major < 3:
-    //         return rasterio.crs.CRS.from_wkt(self.crs.to_wkt(WktVersion.WKT1_GDAL))
-    //     else:
-    //         return rasterio.crs.CRS.from_wkt(self.crs.to_wkt())
 
     /// TileMatrixSet minimum TileMatrix identifier
     pub fn minzoom(&self) -> u8 {
@@ -249,7 +271,7 @@ impl Tms {
                     description: None,
                     keywords: None,
                 },
-                id: (tile_matrix.id.parse::<i32>().unwrap() + 1).to_string(),
+                id: (tile_matrix.id.parse::<u8>().unwrap() + 1).to_string(),
                 scale_denominator: tile_matrix.scale_denominator / factor,
                 cell_size: tile_matrix.cell_size, // FIXME
                 corner_of_origin: tile_matrix.corner_of_origin,
@@ -303,7 +325,7 @@ impl Tms {
         max_z: Option<u8>,
         zoom_level_strategy: &str,
         min_z: Option<u8>,
-    ) -> u8 {
+    ) -> Result<u8> {
         let max_z = max_z.unwrap_or(self.maxzoom());
         let min_z = min_z.unwrap_or(self.minzoom());
         let mut zoom_level = min_z;
@@ -326,63 +348,48 @@ impl Tms {
                     zoom_level = u8::max(zoom_level - 1, min_z);
                 }
             } else {
-                panic!(
-                    "Invalid strategy: {}. Should be one of lower|upper|auto",
-                    zoom_level_strategy
-                );
+                return Err(Error::InvalidZoomLevelStrategy(
+                    zoom_level_strategy.to_string(),
+                ));
             }
         }
-        zoom_level
+        Ok(zoom_level)
     }
 
     /// Transform point(x,y) to geographic longitude and latitude.
-    fn lnglat(&self, x: f64, y: f64, truncate: bool /* =False */) -> Coords {
-        // Default: truncate=False
-        let inside = point_in_bbox(Coords::new(x, y), self.xy_bbox(), DEFAULT_BBOX_PREC);
-        if !inside {
-            println!(
-                "Point ({x}, {y}) is outside TMS bounds {:?}.",
-                self.xy_bbox(),
-            );
-        }
-
-        let (mut lng, mut lat) = self.to_geographic.transform(x, y);
+    fn lnglat(&self, x: f64, y: f64, truncate: bool /* =False */) -> Result<Coords> {
+        point_in_bbox(Coords::new(x, y), self.xy_bbox(), DEFAULT_BBOX_PREC)?;
+        let (mut lng, mut lat) = self.to_geographic.transform(x, y)?;
 
         if truncate {
-            (lng, lat) = self.truncate_lnglat(lng, lat);
+            (lng, lat) = self.truncate_lnglat(lng, lat)?;
         }
 
-        return Coords::new(lng, lat);
+        Ok(Coords::new(lng, lat))
     }
 
     /// Transform geographic longitude and latitude coordinates to TMS CRS
-    pub fn xy(&self, lng: f64, lat: f64) -> Coords {
-        let inside = point_in_bbox(Coords::new(lng, lat), self.xy_bbox(), DEFAULT_BBOX_PREC);
-        if !inside {
-            println!(
-                "Point ({lng}, {lat}) is outside TMS bounds {:?}.",
-                self.xy_bbox()
-            );
-        }
+    pub fn xy(&self, lng: f64, lat: f64) -> Result<Coords> {
+        point_in_bbox(Coords::new(lng, lat), self.xy_bbox(), DEFAULT_BBOX_PREC)?;
 
-        let (x, y) = self.from_geographic.transform(lng, lat);
+        let (x, y) = self.from_geographic.transform(lng, lat)?;
 
-        return Coords::new(x, y);
+        Ok(Coords::new(x, y))
     }
 
     /// Transform geographic longitude and latitude coordinates to TMS CRS. Truncate geographic coordinates to TMS geographic bbox.
-    pub fn xy_truncated(&self, lng: f64, lat: f64) -> Coords {
-        let (lng, lat) = self.truncate_lnglat(lng, lat);
+    pub fn xy_truncated(&self, lng: f64, lat: f64) -> Result<Coords> {
+        let (lng, lat) = self.truncate_lnglat(lng, lat)?;
         self.xy(lng, lat)
     }
 
     /// Truncate geographic coordinates to TMS geographic bbox.
     //
     // Adapted from <https://github.com/mapbox/mercantile/blob/master/mercantile/__init__.py>
-    pub fn truncate_lnglat(&self, lng: f64, lat: f64) -> (f64, f64) {
+    pub fn truncate_lnglat(&self, lng: f64, lat: f64) -> Result<(f64, f64)> {
         let mut lng = lng;
         let mut lat = lat;
-        let bbox = self.bbox();
+        let bbox = self.bbox()?;
         if lng > bbox.right {
             lng = bbox.right;
         } else if lng < bbox.left {
@@ -395,7 +402,7 @@ impl Tms {
             lat = bbox.bottom;
         }
 
-        (lng, lat)
+        Ok((lng, lat))
     }
 
     /// Get the tile containing a Point (in TMS CRS).
@@ -454,9 +461,9 @@ impl Tms {
     /// # Arguments
     /// * `lng`, `lat` : A longitude and latitude pair in geographic coordinate reference system.
     /// * `zoom` : The zoom level.
-    pub fn tile(&self, lng: f64, lat: f64, zoom: u8) -> Tile {
-        let xy = self.xy(lng, lat);
-        self.xytile(xy.x, xy.y, zoom)
+    pub fn tile(&self, lng: f64, lat: f64, zoom: u8) -> Result<Tile> {
+        let xy = self.xy(lng, lat)?;
+        Ok(self.xytile(xy.x, xy.y, zoom))
     }
 
     /// Get the tile for a given geographic longitude and latitude pair. Truncate inputs to limits of TMS geographic bounds.
@@ -464,9 +471,9 @@ impl Tms {
     /// # Arguments
     /// * `lng`, `lat` : A longitude and latitude pair in geographic coordinate reference system.
     /// * `zoom` : The zoom level.
-    pub fn tile_truncated(&self, lng: f64, lat: f64, zoom: u8) -> Tile {
-        let xy = self.xy_truncated(lng, lat);
-        self.xytile(xy.x, xy.y, zoom)
+    pub fn tile_truncated(&self, lng: f64, lat: f64, zoom: u8) -> Result<Tile> {
+        let xy = self.xy_truncated(lng, lat)?;
+        Ok(self.xytile(xy.x, xy.y, zoom))
     }
 
     /// Return the upper left coordinate of the tile in TMS coordinate reference system.
@@ -510,26 +517,32 @@ impl Tms {
     ///
     /// # Arguments
     /// * `tile` - (x, y, z) tile coordinates or a Tile object we want the upper left geographic coordinates of.
-    pub fn ul(&self, tile: &Tile) -> Coords {
-        if self.data_crs.as_srid() == 3857 && self.geographic_crs.as_srid() == 4326 {
+    pub fn ul(&self, tile: &Tile) -> Result<Coords> {
+        let coords = if self.data_crs.as_srid() == 3857 && self.geographic_crs.as_srid() == 4326 {
             let (lon, lat) = merc_tile_ul(tile.x as u32, tile.y as u32, tile.z);
             Coords::new(lon, lat)
         } else {
             let xy = self.ul_(tile);
-            self.lnglat(xy.x, xy.y, false)
-        }
+            self.lnglat(xy.x, xy.y, false)?
+        };
+        Ok(coords)
     }
 
     /// Return the bounding box of the tile in geographic coordinate reference system.
     ///
     /// # Arguments
     /// * `tile` - Tile object we want the bounding box of.
-    pub fn bounds(&self, tile: &Tile) -> BoundingBox {
+    pub fn bounds(&self, tile: &Tile) -> Result<BoundingBox> {
         let t = tile; // parse_tile_arg(tile);
 
-        let top_left = self.ul(t);
-        let bottom_right = self.ul(&Tile::new(t.x + 1, t.y + 1, t.z));
-        BoundingBox::new(top_left.x, bottom_right.y, bottom_right.x, top_left.y)
+        let top_left = self.ul(t)?;
+        let bottom_right = self.ul(&Tile::new(t.x + 1, t.y + 1, t.z))?;
+        Ok(BoundingBox::new(
+            top_left.x,
+            bottom_right.y,
+            bottom_right.x,
+            top_left.y,
+        ))
     }
 
     /// Return TMS bounding box in TileMatrixSet's CRS.
@@ -547,9 +560,12 @@ impl Tms {
             };
             if let Some(crs) = &bounding_box.crs {
                 if crs != self.crs() {
-                    let transform = Transformer::from_crs(crs, &self.crs(), true);
+                    // Verified in init function
+                    let transform =
+                        Transformer::from_crs(crs, &self.crs(), true).expect("Transformer");
                     let (left, bottom, right, top) = transform
-                        .transform_bounds(*left, *bottom, *right, *top /* , Some(21) */);
+                        .transform_bounds(*left, *bottom, *right, *top /* , Some(21) */)
+                        .expect("Transformer");
                     (left, bottom, right, top)
                 } else {
                     (*left, *bottom, *right, *top)
@@ -577,15 +593,15 @@ impl Tms {
     }
 
     /// Return TMS bounding box in geographic coordinate reference system.
-    pub fn bbox(&self) -> BoundingBox {
+    pub fn bbox(&self) -> Result<BoundingBox> {
         let xy_bbox = self.xy_bbox();
         let bbox = self.to_geographic.transform_bounds(
             xy_bbox.left,
             xy_bbox.bottom,
             xy_bbox.right,
             xy_bbox.top,
-        );
-        BoundingBox::new(bbox.0, bbox.1, bbox.2, bbox.3)
+        )?;
+        Ok(BoundingBox::new(bbox.0, bbox.1, bbox.2, bbox.3))
     }
 
     /// Check if a bounds intersects with the TMS bounds.
@@ -617,9 +633,9 @@ impl Tms {
         north: f64,
         zooms: &[u8],
         truncate: bool, /* = False */
-    ) -> impl Iterator<Item = Tile> {
+    ) -> Result<impl Iterator<Item = Tile>> {
         let mut tiles: Vec<Tile> = Vec::new();
-        let bbox = self.bbox();
+        let bbox = self.bbox()?;
         let bboxes = if west > east {
             vec![
                 (bbox.left, south, east, north),
@@ -639,8 +655,8 @@ impl Tms {
             let e = bb.2.min(bbox.right);
             let n = bb.3.min(bbox.top);
             for z in zooms {
-                let ul_tile = get_tile(self, w + LL_EPSILON, n - LL_EPSILON, *z);
-                let lr_tile = get_tile(self, e - LL_EPSILON, s + LL_EPSILON, *z);
+                let ul_tile = get_tile(self, w + LL_EPSILON, n - LL_EPSILON, *z)?;
+                let lr_tile = get_tile(self, e - LL_EPSILON, s + LL_EPSILON, *z)?;
                 for i in ul_tile.x..=lr_tile.x {
                     for j in ul_tile.y..=lr_tile.y {
                         tiles.push(Tile::new(i, j, *z));
@@ -648,7 +664,7 @@ impl Tms {
                 }
             }
         }
-        tiles.into_iter()
+        Ok(tiles.into_iter())
     }
 
     /// Get the tile limits overlapped by a geographic bounding box
@@ -658,11 +674,11 @@ impl Tms {
         minzoom: u8,
         maxzoom: u8,
         truncate: bool, /* = False */
-    ) -> Vec<MinMax> {
+    ) -> Result<Vec<MinMax>> {
         if extend.left > extend.right || minzoom > maxzoom {
-            return Vec::new();
+            return Ok(Vec::new()); // TODO: Handle extend over date line
         }
-        let bbox = self.bbox();
+        let bbox = self.bbox()?;
         let get_tile = if truncate {
             Tms::tile_truncated
         } else {
@@ -672,24 +688,25 @@ impl Tms {
         let s = extend.bottom.max(bbox.bottom);
         let e = extend.right.min(bbox.right);
         let n = extend.top.min(bbox.top);
-        (minzoom..=maxzoom)
+        let limits = (minzoom..=maxzoom)
             .map(|z| {
-                let ul_tile = get_tile(self, w + LL_EPSILON, n - LL_EPSILON, z);
-                let lr_tile = get_tile(self, e - LL_EPSILON, s + LL_EPSILON, z);
-                MinMax {
+                let ul_tile = get_tile(self, w + LL_EPSILON, n - LL_EPSILON, z)?;
+                let lr_tile = get_tile(self, e - LL_EPSILON, s + LL_EPSILON, z)?;
+                Ok(MinMax {
                     x_min: ul_tile.x,
                     x_max: lr_tile.x,
                     y_min: ul_tile.y,
                     y_max: lr_tile.y,
-                }
+                })
             })
-            .collect()
+            .collect::<Result<Vec<MinMax>>>()?;
+        Ok(limits)
     }
 
     /// Get the tile limits overlapped by a bounding box in TMS CRS
     fn extent_limits_xy(&self, extend: &BoundingBox, minzoom: u8, maxzoom: u8) -> Vec<MinMax> {
         if extend.left > extend.right || minzoom > maxzoom {
-            return Vec::new();
+            return Vec::new(); // TODO: Handle extend over date line
         }
         let bbox = self.xy_bbox();
         let w = extend.left.max(bbox.left);
@@ -717,9 +734,9 @@ impl Tms {
         extend: &BoundingBox,
         minzoom: u8,
         maxzoom: u8,
-    ) -> XyzIterator {
-        let limits = self.extent_limits(extend, minzoom, maxzoom, false);
-        XyzIterator::new(minzoom, maxzoom, limits)
+    ) -> Result<XyzIterator> {
+        let limits = self.extent_limits(extend, minzoom, maxzoom, false)?;
+        Ok(XyzIterator::new(minzoom, maxzoom, limits))
     }
 
     /// Get iterator over all tiles overlapped by a bounding box in TMS CRS
@@ -841,7 +858,7 @@ impl Tms {
         let validx = extrema.x_min <= t.x && t.x <= extrema.x_max;
         let validy = extrema.y_min <= t.y && t.y <= extrema.y_max;
 
-        return validx && validy;
+        validx && validy
     }
 
     /// The neighbors of a tile
@@ -885,26 +902,28 @@ impl Tms {
     /// * `tile` - instance of Tile
     /// * `zoom` - Determines the *zoom* level of the returned parent tile.
     ///     This defaults to one lower than the tile (the immediate parent).
-    pub fn parent(&self, tile: &Tile, zoom: Option<u8> /*  = None */) -> Vec<Tile> {
-        let t = tile; // parse_tile_arg(tile);
-        if t.z == self.minzoom() {
-            return vec![];
+    pub fn parent(&self, tile: &Tile, zoom: Option<u8> /*  = None */) -> Result<Vec<Tile>> {
+        if tile.z == self.minzoom() {
+            return Ok(vec![]);
         }
 
         if let Some(zoom) = zoom {
-            if t.z <= zoom {
-                panic!("zoom must be less than that of the input t");
+            if tile.z <= zoom {
+                // zoom must be less than that of the input tile
+                return Err(Error::InvalidZoom(zoom));
             }
+        } else if tile.z == 0 {
+            return Err(Error::InvalidZoom(0));
         }
 
         let target_zoom = match zoom {
             Some(zoom) => zoom,
-            None => t.z - 1,
+            None => tile.z - 1,
         };
 
-        let res = self.resolution(&self.matrix(t.z)) / 10.0;
+        let res = self.resolution(&self.matrix(tile.z)) / 10.0;
 
-        let bbox = self.xy_bounds(t);
+        let bbox = self.xy_bounds(tile);
         let ul_tile = self.xytile(bbox.left + res, bbox.top - res, target_zoom);
         let lr_tile = self.xytile(bbox.right - res, bbox.bottom + res, target_zoom);
 
@@ -915,7 +934,7 @@ impl Tms {
             }
         }
 
-        tiles
+        Ok(tiles)
     }
 
     /// Get the children of a tile
@@ -926,23 +945,23 @@ impl Tms {
     /// * `tile` - instance of Tile
     /// * `zoom` - Determines the *zoom* level of the returned parent tile.
     ///     This defaults to one lower than the tile (the immediate parent).
-    pub fn children(&self, tile: &Tile, zoom: Option<u8>) -> Vec<Tile> {
-        let t = tile; // parse_tile_arg(tile);
+    pub fn children(&self, tile: &Tile, zoom: Option<u8>) -> Result<Vec<Tile>> {
         let mut tiles = Vec::new();
 
         if let Some(zoom) = zoom {
-            if t.z > zoom {
-                panic!("zoom must be greater than that of the input tile");
+            if tile.z > zoom {
+                // zoom must be greater than that of the input tile
+                return Err(Error::InvalidZoom(zoom));
             }
         }
 
         let target_zoom = match zoom {
             Some(z) => z,
-            None => t.z + 1,
+            None => tile.z + 1,
         };
 
-        let bbox = self.xy_bounds(t);
-        let res = self.resolution(&self.matrix(t.z)) / 10.0;
+        let bbox = self.xy_bounds(tile);
+        let res = self.resolution(&self.matrix(tile.z)) / 10.0;
 
         let ul_tile = self.xytile(bbox.left + res, bbox.top - res, target_zoom);
         let lr_tile = self.xytile(bbox.right - res, bbox.bottom + res, target_zoom);
@@ -953,7 +972,7 @@ impl Tms {
             }
         }
 
-        tiles
+        Ok(tiles)
     }
 }
 
@@ -965,15 +984,9 @@ pub(crate) struct MinMax {
     pub y_max: u64,
 }
 
-impl From<TileMatrixSet> for Tms {
-    fn from(tms: TileMatrixSet) -> Self {
-        Tms::init(tms)
-    }
-}
-
-impl<'a> From<&'a TileMatrixSet> for Tms {
-    fn from(tms: &'a TileMatrixSet) -> Self {
-        Tms::init(tms.clone())
+impl TileMatrixSet {
+    pub fn into_tms(&self) -> Result<Tms> {
+        Tms::init(&self)
     }
 }
 
@@ -997,20 +1010,30 @@ pub fn meters_per_unit(crs: &Crs) -> f64 {
         "degree" => 2.0 * PI * SEMI_MAJOR_METRE / 360.0,
         "foot" => 0.3048,
         "US survey foot" => 0.30480060960121924,
-        _ => panic!("CRS {crs:?} with Unit Name `{}` is not supported, please fill an issue in developmentseed/morecantile", unit_name),
+        _ => panic!(
+            "CRS {crs:?} with Unit Name `{}` is not supported",
+            unit_name
+        ),
     }
 }
+
+const LL_EPSILON: f64 = 1e-11;
 
 pub const DEFAULT_BBOX_PREC: u8 = 5;
 
 /// Check if a point is in a bounding box.
-pub fn point_in_bbox(point: Coords, bbox: BoundingBox, precision: u8 /* = 5 */) -> bool {
+pub fn point_in_bbox(point: Coords, bbox: BoundingBox, precision: u8 /* = 5 */) -> Result<()> {
     fn round_to_prec(number: f64, precision: u8) -> f64 {
         let factor = 10.0_f64.powi(precision as i32);
         (number * factor).round() / factor
     }
-    round_to_prec(point.x, precision) >= round_to_prec(bbox.left, precision)
+    let inside = round_to_prec(point.x, precision) >= round_to_prec(bbox.left, precision)
         && round_to_prec(point.x, precision) <= round_to_prec(bbox.right, precision)
         && round_to_prec(point.y, precision) >= round_to_prec(bbox.bottom, precision)
-        && round_to_prec(point.y, precision) <= round_to_prec(bbox.top, precision)
+        && round_to_prec(point.y, precision) <= round_to_prec(bbox.top, precision);
+    if inside {
+        Ok(())
+    } else {
+        Err(Error::PointOutsideBounds(point.x, point.y, bbox))
+    }
 }
