@@ -54,7 +54,7 @@ mod transform;
 mod wmts;
 
 pub use common::*;
-pub use registry::*;
+pub use registry::{RegistryError as Error, *};
 pub use tile::*;
 pub use tile_matrix_set::*;
 pub use tileset::*;

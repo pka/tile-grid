@@ -21,7 +21,7 @@ pub struct Tms {
 }
 
 #[derive(thiserror::Error, Debug)]
-pub enum Error {
+pub enum TmsError {
     #[error("Invalid tile zoom identifier: `{0}`")]
     InvalidZoomId(String),
     #[error("Invalid strategy: `{0}`. Should be one of lower|upper|auto")]
@@ -44,7 +44,7 @@ pub enum Error {
     // QuadKeyError,
 }
 
-pub type Result<T> = std::result::Result<T, Error>;
+pub type Result<T> = std::result::Result<T, TmsError>;
 
 impl Tms {
     /// Prepare transformations and check if TileMatrixSet supports quadkeys.
@@ -85,7 +85,7 @@ impl Tms {
         // Check zoom identifier format
         for m in &tms.tile_matrices {
             m.id.parse::<u8>()
-                .map_err(|_e| Error::InvalidZoomId(m.id.clone()))?;
+                .map_err(|_e| TmsError::InvalidZoomId(m.id.clone()))?;
         }
         tms.tile_matrices.sort_by(|a, b| {
             a.id.parse::<u8>()
@@ -348,7 +348,7 @@ impl Tms {
                     zoom_level = u8::max(zoom_level - 1, min_z);
                 }
             } else {
-                return Err(Error::InvalidZoomLevelStrategy(
+                return Err(TmsError::InvalidZoomLevelStrategy(
                     zoom_level_strategy.to_string(),
                 ));
             }
@@ -910,10 +910,10 @@ impl Tms {
         if let Some(zoom) = zoom {
             if tile.z <= zoom {
                 // zoom must be less than that of the input tile
-                return Err(Error::InvalidZoom(zoom));
+                return Err(TmsError::InvalidZoom(zoom));
             }
         } else if tile.z == 0 {
-            return Err(Error::InvalidZoom(0));
+            return Err(TmsError::InvalidZoom(0));
         }
 
         let target_zoom = match zoom {
@@ -951,7 +951,7 @@ impl Tms {
         if let Some(zoom) = zoom {
             if tile.z > zoom {
                 // zoom must be greater than that of the input tile
-                return Err(Error::InvalidZoom(zoom));
+                return Err(TmsError::InvalidZoom(zoom));
             }
         }
 
@@ -1034,6 +1034,6 @@ pub fn point_in_bbox(point: Coords, bbox: BoundingBox, precision: u8 /* = 5 */) 
     if inside {
         Ok(())
     } else {
-        Err(Error::PointOutsideBounds(point.x, point.y, bbox))
+        Err(TmsError::PointOutsideBounds(point.x, point.y, bbox))
     }
 }

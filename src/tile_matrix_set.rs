@@ -122,7 +122,7 @@ impl Default for CornerOfOrigin {
 }
 
 #[derive(thiserror::Error, Debug)]
-pub enum Error {
+pub enum TileMatrixSetError {
     #[error(transparent)]
     JsonError(#[from] serde_json::Error),
     #[error("{0}: {1}")]
@@ -130,12 +130,12 @@ pub enum Error {
 }
 
 impl TileMatrixSet {
-    pub fn from_json_file(json_path: &str) -> Result<Self, Error> {
+    pub fn from_json_file(json_path: &str) -> Result<Self, TileMatrixSetError> {
         let content = std::fs::read_to_string(json_path)
-            .map_err(|e| Error::FileError(json_path.into(), e))?;
+            .map_err(|e| TileMatrixSetError::FileError(json_path.into(), e))?;
         TileMatrixSet::from_json(&content)
     }
-    pub fn from_json(json: &str) -> Result<Self, Error> {
+    pub fn from_json(json: &str) -> Result<Self, TileMatrixSetError> {
         serde_json::from_str(&json).map_err(Into::into)
     }
     /// Check if CRS has inverted AXIS (lat,lon) instead of (lon,lat).

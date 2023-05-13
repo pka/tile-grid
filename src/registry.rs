@@ -11,13 +11,13 @@ pub struct TileMatrixSets {
 }
 
 #[derive(thiserror::Error, Debug)]
-pub enum Error {
+pub enum RegistryError {
     #[error("Tile Matrix set not found: `{0}`")]
     TmsNotFound(String),
     #[error("`{0}` is already a registered TMS")]
     TmsAlreadyRegistered(String),
     #[error(transparent)]
-    TmsError(#[from] crate::tms::Error),
+    TmsError(#[from] crate::tms::TmsError),
 }
 
 impl TileMatrixSets {
@@ -27,11 +27,13 @@ impl TileMatrixSets {
         }
     }
 
-    pub fn get(&self, id: &str) -> Result<&TileMatrixSet, Error> {
-        self.coll.get(id).ok_or(Error::TmsNotFound(id.to_string()))
+    pub fn get(&self, id: &str) -> Result<&TileMatrixSet, RegistryError> {
+        self.coll
+            .get(id)
+            .ok_or(RegistryError::TmsNotFound(id.to_string()))
     }
 
-    pub fn lookup(&self, id: &str) -> Result<Tms, Error> {
+    pub fn lookup(&self, id: &str) -> Result<Tms, RegistryError> {
         self.get(id)?.into_tms().map_err(Into::into)
     }
 
@@ -43,13 +45,13 @@ impl TileMatrixSets {
         &mut self,
         custom_tms: Vec<TileMatrixSet>,
         overwrite: bool,
-    ) -> Result<(), Error> {
+    ) -> Result<(), RegistryError> {
         for tms in custom_tms {
             if self.coll.contains_key(&tms.id) {
                 if overwrite {
                     self.coll.insert(tms.id.clone(), tms);
                 } else {
-                    return Err(Error::TmsAlreadyRegistered(tms.id));
+                    return Err(RegistryError::TmsAlreadyRegistered(tms.id));
                 }
             } else {
                 self.coll.insert(tms.id.clone(), tms);
