@@ -50,7 +50,7 @@ pub struct TileSet {
     #[serde(rename = "tileMatrixSetURI")]
     tile_matrix_set_uri: Option<String>,
     /// Limits for the TileRow and TileCol values for each TileMatrix in the
-    /// [TileMatrixSet]. If missing, there are no limits other that the ones
+    /// TileMatrixSet. If missing, there are no limits other that the ones
     /// imposed by the TileMatrixSet. If present the TileMatrices listed are
     /// limited and the rest not available at all
     tile_matrix_set_limits: Option<Vec<TileMatrixLimits>>,
@@ -62,7 +62,7 @@ pub struct TileSet {
     /// for a URL pointing to the dataset, 'tiles' for a URL template to get
     /// the tiles; 'alternate' for a URL pointing to another representation of
     /// the TileSetMetadata (e.g a TileJSON file); 'tiling-scheme' for a
-    /// definition of the [TileMatrixSet]
+    /// definition of the TileMatrixSet
     links: Links,
     layers: Option<Vec<GeospatialData>>,
     /// Minimum bounding rectangle surrounding the tile matrix set, in the supported CRS

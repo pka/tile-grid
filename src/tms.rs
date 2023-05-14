@@ -410,7 +410,7 @@ impl Tms {
     /// # Arguments
     /// * `xcoord`, ycoord - A `X` and `Y` pair in TMS coordinate reference system.
     /// * `zoom` - The zoom level.
-    pub fn xytile(&self, xcoord: f64, ycoord: f64, zoom: u8) -> Tile {
+    pub fn xy_tile(&self, xcoord: f64, ycoord: f64, zoom: u8) -> Tile {
         let matrix = self.matrix(zoom);
         let res = self.resolution(&matrix);
 
@@ -463,7 +463,7 @@ impl Tms {
     /// * `zoom` : The zoom level.
     pub fn tile(&self, lng: f64, lat: f64, zoom: u8) -> Result<Tile> {
         let xy = self.xy(lng, lat)?;
-        Ok(self.xytile(xy.x, xy.y, zoom))
+        Ok(self.xy_tile(xy.x, xy.y, zoom))
     }
 
     /// Get the tile for a given geographic longitude and latitude pair. Truncate inputs to limits of TMS geographic bounds.
@@ -473,14 +473,14 @@ impl Tms {
     /// * `zoom` : The zoom level.
     pub fn tile_truncated(&self, lng: f64, lat: f64, zoom: u8) -> Result<Tile> {
         let xy = self.xy_truncated(lng, lat)?;
-        Ok(self.xytile(xy.x, xy.y, zoom))
+        Ok(self.xy_tile(xy.x, xy.y, zoom))
     }
 
     /// Return the upper left coordinate of the tile in TMS coordinate reference system.
     ///
     /// # Arguments
     /// * `tile`: (x, y, z) tile coordinates or a Tile object we want the upper left coordinates of.
-    pub fn ul_(&self, tile: &Tile) -> Coords {
+    pub fn xy_ul(&self, tile: &Tile) -> Coords {
         let t = tile;
         let matrix = self.matrix(t.z);
         let res = self.resolution(&matrix);
@@ -508,8 +508,8 @@ impl Tms {
     pub fn xy_bounds(&self, tile: &Tile) -> BoundingBox {
         let t = tile; // parse_tile_arg(tile);
 
-        let top_left = self.ul_(&t);
-        let bottom_right = self.ul_(&Tile::new(t.x + 1, t.y + 1, t.z));
+        let top_left = self.xy_ul(&t);
+        let bottom_right = self.xy_ul(&Tile::new(t.x + 1, t.y + 1, t.z));
         BoundingBox::new(top_left.x, bottom_right.y, bottom_right.x, top_left.y)
     }
 
@@ -522,7 +522,7 @@ impl Tms {
             let (lon, lat) = merc_tile_ul(tile.x as u32, tile.y as u32, tile.z);
             Coords::new(lon, lat)
         } else {
-            let xy = self.ul_(tile);
+            let xy = self.xy_ul(tile);
             self.lnglat(xy.x, xy.y, false)?
         };
         Ok(coords)
@@ -576,8 +576,8 @@ impl Tms {
         } else {
             let zoom = self.minzoom();
             let matrix = self.matrix(zoom);
-            let top_left = self.ul_(&Tile::new(0, 0, zoom));
-            let bottom_right = self.ul_(&Tile::new(
+            let top_left = self.xy_ul(&Tile::new(0, 0, zoom));
+            let bottom_right = self.xy_ul(&Tile::new(
                 u64::from(matrix.matrix_width),
                 u64::from(matrix.matrix_height),
                 zoom,
@@ -716,8 +716,8 @@ impl Tms {
         (minzoom..=maxzoom)
             .map(|z| {
                 let res = self.resolution(&self.matrix(z)) / 10.0;
-                let ul_tile = self.xytile(w + res, n - res, z);
-                let lr_tile = self.xytile(e - res, s + res, z);
+                let ul_tile = self.xy_tile(w + res, n - res, z);
+                let lr_tile = self.xy_tile(e - res, s + res, z);
                 MinMax {
                     x_min: ul_tile.x,
                     x_max: lr_tile.x,
@@ -924,8 +924,8 @@ impl Tms {
         let res = self.resolution(&self.matrix(tile.z)) / 10.0;
 
         let bbox = self.xy_bounds(tile);
-        let ul_tile = self.xytile(bbox.left + res, bbox.top - res, target_zoom);
-        let lr_tile = self.xytile(bbox.right - res, bbox.bottom + res, target_zoom);
+        let ul_tile = self.xy_tile(bbox.left + res, bbox.top - res, target_zoom);
+        let lr_tile = self.xy_tile(bbox.right - res, bbox.bottom + res, target_zoom);
 
         let mut tiles = Vec::new();
         for i in ul_tile.x..=lr_tile.x {
@@ -963,8 +963,8 @@ impl Tms {
         let bbox = self.xy_bounds(tile);
         let res = self.resolution(&self.matrix(tile.z)) / 10.0;
 
-        let ul_tile = self.xytile(bbox.left + res, bbox.top - res, target_zoom);
-        let lr_tile = self.xytile(bbox.right - res, bbox.bottom + res, target_zoom);
+        let ul_tile = self.xy_tile(bbox.left + res, bbox.top - res, target_zoom);
+        let lr_tile = self.xy_tile(bbox.right - res, bbox.bottom + res, target_zoom);
 
         for i in ul_tile.x..=lr_tile.x {
             for j in ul_tile.y..=lr_tile.y {

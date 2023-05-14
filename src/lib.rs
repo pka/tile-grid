@@ -5,7 +5,7 @@
 //! ```rust
 //! use tile_grid::{tms, BoundingBox, Tile};
 //!
-//! let tms= tms().lookup("WebMercatorQuad").unwrap();
+//! let tms = tms().lookup("WebMercatorQuad").unwrap();
 //!
 //! // Get the bounds for tile Z=4, X=10, Y=10 in the input projection
 //! let bounds = tms.xy_bounds(&Tile::new(10, 10, 4));
@@ -30,15 +30,13 @@
 //! ## Find tile for lat/lon
 //!
 //! ```rust
-//! use tile_grid::{tms, Tile};
-//!
-//! let tms= tms().lookup("WebMercatorQuad").unwrap();
-//!
+//! # use tile_grid::{tms, Tile};
+//! # let tms = tms().lookup("WebMercatorQuad").unwrap();
 //! let tile = tms.tile(159.31, -42.0, 4).unwrap();
 //! assert_eq!(tile, Tile::new(15, 10, 4));
 //!
 //! // Or using coordinates in input CRS
-//! let tile = tms.xytile(17734308.1, -5160979.4, 4);
+//! let tile = tms.xy_tile(17734308.1, -5160979.4, 4);
 //! assert_eq!(tile, Tile::new(15, 10, 4));
 //! ```
 

@@ -6,13 +6,11 @@ pub type ProjTransformer = Proj;
 
 impl Transform for Proj {
     fn from_crs(from: &Crs, to: &Crs, _always_xy: bool) -> Result<Self> {
-        let transform = Proj::new_known_crs(&from.as_known_crs(), &to.as_known_crs(), None)
-            .map_err(|_e| Error::TransformationUnsupported(from.clone(), to.clone()))?;
-        Ok(transform)
+        Proj::new_known_crs(&from.as_known_crs(), &to.as_known_crs(), None)
+            .map_err(|_e| Error::TransformationUnsupported(from.clone(), to.clone()))
     }
     fn transform(&self, x: f64, y: f64) -> Result<(f64, f64)> {
-        let result = self.convert((x, y))?;
-        Ok(result)
+        Ok(self.convert((x, y))?)
     }
     fn transform_bounds(
         &self,

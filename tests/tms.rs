@@ -138,7 +138,7 @@ fn morecantile_examples() {
 
     // Find tile for lat/lon
 
-    //let tms= tms().lookup("WebMercatorQuad").unwrap();
+    //let tms = tms().lookup("WebMercatorQuad").unwrap();
 
     let tile = tms.tile(159.31, -42.0, 4).unwrap();
     assert_eq!(tile, Tile::new(15, 10, 4));
@@ -151,7 +151,7 @@ fn morecantile_examples() {
         //assert_eq!((coord.x, coord.y), (17734308.078276414, -5160979.444049781));
     }
 
-    let tile = tms.xytile(17734308.1, -5160979.4, 4);
+    let tile = tms.xy_tile(17734308.1, -5160979.4, 4);
     assert_eq!(tile, Tile::new(15, 10, 4));
 }
 

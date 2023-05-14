@@ -149,7 +149,7 @@ fn round_to_prec(number: f64, precision: u8) -> f64 {
 fn test_projul_tile() {
     // TileMatrixSet._ul should return the correct coordinates in input projection.
     let tms = tms().lookup("WebMercatorQuad").unwrap();
-    let xy = tms.ul_(&Tile::new(486, 332, 10));
+    let xy = tms.xy_ul(&Tile::new(486, 332, 10));
     let expected = [-1017529.7205322663, 7044436.526761846];
     for (a, b) in zip(expected, [xy.x, xy.y]) {
         assert_eq!(round_to_prec(a - b, 7).abs(), 0.0);

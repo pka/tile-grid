@@ -51,7 +51,7 @@ let tile = tms.tile(159.31, -42.0, 4).unwrap();
 assert_eq!(tile, Tile::new(15, 10, 4));
 
 // Or using coordinates in input CRS
-let tile = tms.xytile(17734308.1, -5160979.4, 4);
+let tile = tms.xy_tile(17734308.1, -5160979.4, 4);
 assert_eq!(tile, Tile::new(15, 10, 4));
 ```
 
