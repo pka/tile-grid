@@ -1,6 +1,6 @@
-## UNRELEASED
+## 0.4.0
 
-* New implementation for supporting OGC TileMatrixSets
+* New implementation based on OGC TileMatrixSets 2.0
 
 ## 0.3.0
 

@@ -1,6 +1,6 @@
 [package]
 name = "tile-grid"
-version = "0.3.0"
+version = "0.4.0"
 authors = ["Pirmin Kalberer <pka@sourcepole.com>"]
 edition = "2018"
 description = "Library for map tile grid calculations."
@@ -8,7 +8,7 @@ homepage = "https://github.com/pka/tile-grid"
 repository = "https://github.com/pka/tile-grid"
 readme = "README.md"
 license = "MIT"
-keywords = ["geo", "vector-tiles", "wmts", "mercator", "wgs84"]
+keywords = ["geo", "vector-tiles", "mercator", "wgs84"]
 categories = ["science::geo"]
 
 [features]
