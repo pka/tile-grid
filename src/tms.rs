@@ -46,6 +46,13 @@ pub enum TmsError {
 
 pub type Result<T> = std::result::Result<T, TmsError>;
 
+impl Clone for Tms {
+    // Custom impl because `Clone` is not implemented for `Proj`
+    fn clone(&self) -> Tms {
+        Tms::init(&self.tms).unwrap()
+    }
+}
+
 impl Tms {
     /// Prepare transformations and check if TileMatrixSet supports quadkeys.
     pub(crate) fn init(data: &TileMatrixSet) -> Result<Self> {

@@ -2,7 +2,7 @@ use crate::transform::{Error, Result, Transform};
 use crate::Crs;
 use std::f64::consts;
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct BasicTransformer {
     from: Crs,
     to: Crs,

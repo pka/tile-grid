@@ -4,6 +4,7 @@ use once_cell::sync::OnceCell;
 use std::collections::HashMap;
 
 /// Registry of tile matrix sets
+#[derive(Clone)]
 pub struct TileMatrixSets {
     // Registry containing Tms is not supported because of Proj:
     // trait `Send` is not implemented for `*mut proj_sys::PJ_AREA`
@@ -21,7 +22,7 @@ pub enum RegistryError {
 }
 
 impl TileMatrixSets {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             coll: HashMap::new(),
         }
