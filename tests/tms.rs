@@ -158,10 +158,9 @@ fn morecantile_examples() {
 #[test]
 fn mercator_tms() {
     let tms = tms().get("WebMercatorQuad").unwrap();
-    assert_eq!(tms.crs, web_mercator_quad().crs);
     assert_eq!(
-        tms.tile_matrices.len(),
-        web_mercator_quad().tile_matrices.len()
+        serde_json::to_string_pretty(&tms).unwrap(),
+        serde_json::to_string_pretty(&web_mercator_quad()).unwrap()
     );
 }
 
@@ -635,81 +634,404 @@ fn custom_lv95() {
     )
     .unwrap();
 
+    let lv95_json = r##"{
+  "title": "LV95/CH1903+",
+  "id": "LV95",
+  "crs": "http://www.opengis.net/def/crs/EPSG/0/2056",
+  "boundingBox": {
+    "lowerLeft": [
+      2420000.0,
+      1030000.0
+    ],
+    "upperRight": [
+      2900000.0,
+      1350000.0
+    ],
+    "crs": "http://www.opengis.net/def/crs/EPSG/0/2056"
+  },
+  "tileMatrices": [
+    {
+      "id": "0",
+      "scaleDenominator": 14285714.285714287,
+      "cellSize": 4000.0,
+      "cornerOfOrigin": "topLeft",
+      "pointOfOrigin": [
+        2420000.0,
+        1350000.0
+      ],
+      "tileWidth": 256,
+      "tileHeight": 256,
+      "matrixWidth": 1,
+      "matrixHeight": 1
+    },
+    {
+      "id": "1",
+      "scaleDenominator": 13392857.142857144,
+      "cellSize": 3750.0,
+      "cornerOfOrigin": "topLeft",
+      "pointOfOrigin": [
+        2420000.0,
+        1350000.0
+      ],
+      "tileWidth": 256,
+      "tileHeight": 256,
+      "matrixWidth": 1,
+      "matrixHeight": 1
+    },
+    {
+      "id": "2",
+      "scaleDenominator": 12500000.000000002,
+      "cellSize": 3500.0,
+      "cornerOfOrigin": "topLeft",
+      "pointOfOrigin": [
+        2420000.0,
+        1350000.0
+      ],
+      "tileWidth": 256,
+      "tileHeight": 256,
+      "matrixWidth": 1,
+      "matrixHeight": 1
+    },
+    {
+      "id": "3",
+      "scaleDenominator": 11607142.857142858,
+      "cellSize": 3250.0,
+      "cornerOfOrigin": "topLeft",
+      "pointOfOrigin": [
+        2420000.0,
+        1350000.0
+      ],
+      "tileWidth": 256,
+      "tileHeight": 256,
+      "matrixWidth": 1,
+      "matrixHeight": 1
+    },
+    {
+      "id": "4",
+      "scaleDenominator": 10714285.714285715,
+      "cellSize": 3000.0,
+      "cornerOfOrigin": "topLeft",
+      "pointOfOrigin": [
+        2420000.0,
+        1350000.0
+      ],
+      "tileWidth": 256,
+      "tileHeight": 256,
+      "matrixWidth": 1,
+      "matrixHeight": 1
+    },
+    {
+      "id": "5",
+      "scaleDenominator": 9821428.571428573,
+      "cellSize": 2750.0,
+      "cornerOfOrigin": "topLeft",
+      "pointOfOrigin": [
+        2420000.0,
+        1350000.0
+      ],
+      "tileWidth": 256,
+      "tileHeight": 256,
+      "matrixWidth": 1,
+      "matrixHeight": 1
+    },
+    {
+      "id": "6",
+      "scaleDenominator": 8928571.42857143,
+      "cellSize": 2500.0,
+      "cornerOfOrigin": "topLeft",
+      "pointOfOrigin": [
+        2420000.0,
+        1350000.0
+      ],
+      "tileWidth": 256,
+      "tileHeight": 256,
+      "matrixWidth": 1,
+      "matrixHeight": 1
+    },
+    {
+      "id": "7",
+      "scaleDenominator": 8035714.285714286,
+      "cellSize": 2250.0,
+      "cornerOfOrigin": "topLeft",
+      "pointOfOrigin": [
+        2420000.0,
+        1350000.0
+      ],
+      "tileWidth": 256,
+      "tileHeight": 256,
+      "matrixWidth": 1,
+      "matrixHeight": 1
+    },
+    {
+      "id": "8",
+      "scaleDenominator": 7142857.142857144,
+      "cellSize": 2000.0,
+      "cornerOfOrigin": "topLeft",
+      "pointOfOrigin": [
+        2420000.0,
+        1350000.0
+      ],
+      "tileWidth": 256,
+      "tileHeight": 256,
+      "matrixWidth": 1,
+      "matrixHeight": 1
+    },
+    {
+      "id": "9",
+      "scaleDenominator": 6250000.000000001,
+      "cellSize": 1750.0,
+      "cornerOfOrigin": "topLeft",
+      "pointOfOrigin": [
+        2420000.0,
+        1350000.0
+      ],
+      "tileWidth": 256,
+      "tileHeight": 256,
+      "matrixWidth": 2,
+      "matrixHeight": 1
+    },
+    {
+      "id": "10",
+      "scaleDenominator": 5357142.857142857,
+      "cellSize": 1500.0,
+      "cornerOfOrigin": "topLeft",
+      "pointOfOrigin": [
+        2420000.0,
+        1350000.0
+      ],
+      "tileWidth": 256,
+      "tileHeight": 256,
+      "matrixWidth": 2,
+      "matrixHeight": 1
+    },
+    {
+      "id": "11",
+      "scaleDenominator": 4464285.714285715,
+      "cellSize": 1250.0,
+      "cornerOfOrigin": "topLeft",
+      "pointOfOrigin": [
+        2420000.0,
+        1350000.0
+      ],
+      "tileWidth": 256,
+      "tileHeight": 256,
+      "matrixWidth": 2,
+      "matrixHeight": 1
+    },
+    {
+      "id": "12",
+      "scaleDenominator": 3571428.571428572,
+      "cellSize": 1000.0,
+      "cornerOfOrigin": "topLeft",
+      "pointOfOrigin": [
+        2420000.0,
+        1350000.0
+      ],
+      "tileWidth": 256,
+      "tileHeight": 256,
+      "matrixWidth": 2,
+      "matrixHeight": 2
+    },
+    {
+      "id": "13",
+      "scaleDenominator": 2678571.4285714286,
+      "cellSize": 750.0,
+      "cornerOfOrigin": "topLeft",
+      "pointOfOrigin": [
+        2420000.0,
+        1350000.0
+      ],
+      "tileWidth": 256,
+      "tileHeight": 256,
+      "matrixWidth": 3,
+      "matrixHeight": 2
+    },
+    {
+      "id": "14",
+      "scaleDenominator": 2321428.571428572,
+      "cellSize": 650.0,
+      "cornerOfOrigin": "topLeft",
+      "pointOfOrigin": [
+        2420000.0,
+        1350000.0
+      ],
+      "tileWidth": 256,
+      "tileHeight": 256,
+      "matrixWidth": 3,
+      "matrixHeight": 2
+    },
+    {
+      "id": "15",
+      "scaleDenominator": 1785714.285714286,
+      "cellSize": 500.0,
+      "cornerOfOrigin": "topLeft",
+      "pointOfOrigin": [
+        2420000.0,
+        1350000.0
+      ],
+      "tileWidth": 256,
+      "tileHeight": 256,
+      "matrixWidth": 4,
+      "matrixHeight": 3
+    },
+    {
+      "id": "16",
+      "scaleDenominator": 892857.142857143,
+      "cellSize": 250.0,
+      "cornerOfOrigin": "topLeft",
+      "pointOfOrigin": [
+        2420000.0,
+        1350000.0
+      ],
+      "tileWidth": 256,
+      "tileHeight": 256,
+      "matrixWidth": 8,
+      "matrixHeight": 5
+    },
+    {
+      "id": "17",
+      "scaleDenominator": 357142.85714285716,
+      "cellSize": 100.0,
+      "cornerOfOrigin": "topLeft",
+      "pointOfOrigin": [
+        2420000.0,
+        1350000.0
+      ],
+      "tileWidth": 256,
+      "tileHeight": 256,
+      "matrixWidth": 19,
+      "matrixHeight": 13
+    },
+    {
+      "id": "18",
+      "scaleDenominator": 178571.42857142858,
+      "cellSize": 50.0,
+      "cornerOfOrigin": "topLeft",
+      "pointOfOrigin": [
+        2420000.0,
+        1350000.0
+      ],
+      "tileWidth": 256,
+      "tileHeight": 256,
+      "matrixWidth": 38,
+      "matrixHeight": 25
+    },
+    {
+      "id": "19",
+      "scaleDenominator": 71428.57142857143,
+      "cellSize": 20.0,
+      "cornerOfOrigin": "topLeft",
+      "pointOfOrigin": [
+        2420000.0,
+        1350000.0
+      ],
+      "tileWidth": 256,
+      "tileHeight": 256,
+      "matrixWidth": 94,
+      "matrixHeight": 63
+    },
+    {
+      "id": "20",
+      "scaleDenominator": 35714.28571428572,
+      "cellSize": 10.0,
+      "cornerOfOrigin": "topLeft",
+      "pointOfOrigin": [
+        2420000.0,
+        1350000.0
+      ],
+      "tileWidth": 256,
+      "tileHeight": 256,
+      "matrixWidth": 188,
+      "matrixHeight": 125
+    },
+    {
+      "id": "21",
+      "scaleDenominator": 17857.14285714286,
+      "cellSize": 5.0,
+      "cornerOfOrigin": "topLeft",
+      "pointOfOrigin": [
+        2420000.0,
+        1350000.0
+      ],
+      "tileWidth": 256,
+      "tileHeight": 256,
+      "matrixWidth": 375,
+      "matrixHeight": 250
+    },
+    {
+      "id": "22",
+      "scaleDenominator": 8928.57142857143,
+      "cellSize": 2.5,
+      "cornerOfOrigin": "topLeft",
+      "pointOfOrigin": [
+        2420000.0,
+        1350000.0
+      ],
+      "tileWidth": 256,
+      "tileHeight": 256,
+      "matrixWidth": 750,
+      "matrixHeight": 500
+    },
+    {
+      "id": "23",
+      "scaleDenominator": 7142.857142857143,
+      "cellSize": 2.0,
+      "cornerOfOrigin": "topLeft",
+      "pointOfOrigin": [
+        2420000.0,
+        1350000.0
+      ],
+      "tileWidth": 256,
+      "tileHeight": 256,
+      "matrixWidth": 938,
+      "matrixHeight": 625
+    },
+    {
+      "id": "24",
+      "scaleDenominator": 5357.142857142858,
+      "cellSize": 1.5,
+      "cornerOfOrigin": "topLeft",
+      "pointOfOrigin": [
+        2420000.0,
+        1350000.0
+      ],
+      "tileWidth": 256,
+      "tileHeight": 256,
+      "matrixWidth": 1250,
+      "matrixHeight": 834
+    },
+    {
+      "id": "25",
+      "scaleDenominator": 3571.4285714285716,
+      "cellSize": 1.0,
+      "cornerOfOrigin": "topLeft",
+      "pointOfOrigin": [
+        2420000.0,
+        1350000.0
+      ],
+      "tileWidth": 256,
+      "tileHeight": 256,
+      "matrixWidth": 1875,
+      "matrixHeight": 1250
+    },
+    {
+      "id": "26",
+      "scaleDenominator": 1785.7142857142858,
+      "cellSize": 0.5,
+      "cornerOfOrigin": "topLeft",
+      "pointOfOrigin": [
+        2420000.0,
+        1350000.0
+      ],
+      "tileWidth": 256,
+      "tileHeight": 256,
+      "matrixWidth": 3750,
+      "matrixHeight": 2500
+    }
+  ]
+}"##;
     assert_eq!(
-        custom_tms.tms.bounding_box.as_ref().unwrap().lower_left,
-        [2420000.0, 1030000.0]
-    );
-    assert_eq!(
-        custom_tms.tms.bounding_box.as_ref().unwrap().upper_right,
-        [2900000.0, 1350000.0]
-    );
-    assert_eq!(
-        custom_tms.tms.tile_matrices[0].point_of_origin,
-        [2420000.0, 1350000.0]
-    );
-
-    let scales: Vec<f64> = custom_tms
-        .tms
-        .tile_matrices
-        .iter()
-        .map(|m| m.scale_denominator)
-        .collect();
-    assert_eq!(
-        scales,
-        vec![
-            14285714.285714287,
-            13392857.142857144,
-            12500000.000000002,
-            11607142.857142858,
-            10714285.714285715,
-            9821428.571428573,
-            8928571.42857143,
-            8035714.285714286,
-            7142857.142857144,
-            6250000.000000001,
-            5357142.857142857,
-            4464285.714285715,
-            3571428.571428572,
-            2678571.4285714286,
-            2321428.571428572,
-            1785714.285714286,
-            892857.142857143,
-            357142.85714285716,
-            178571.42857142858,
-            71428.57142857143,
-            35714.28571428572,
-            17857.14285714286,
-            8928.57142857143,
-            7142.857142857143,
-            5357.142857142858,
-            3571.4285714285716,
-            1785.7142857142858,
-        ]
-    );
-    let matrix_widths: Vec<u64> = custom_tms
-        .tms
-        .tile_matrices
-        .iter()
-        .map(|m| m.matrix_width.into())
-        .collect();
-    assert_eq!(
-        matrix_widths,
-        vec![
-            1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 8, 19, 38, 94, 188, 375, 750, 938,
-            1250, 1875, 3750,
-        ]
-    );
-    let matrix_heights: Vec<u64> = custom_tms
-        .tms
-        .tile_matrices
-        .iter()
-        .map(|m| m.matrix_height.into())
-        .collect();
-    assert_eq!(
-        matrix_heights,
-        vec![
-            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 3, 5, 13, 25, 63, 125, 250, 500, 625, 834,
-            1250, 2500,
-        ]
+        serde_json::to_string_pretty(&custom_tms.tms).unwrap(),
+        lv95_json
     );
 }
