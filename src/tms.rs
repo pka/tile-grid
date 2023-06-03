@@ -287,12 +287,20 @@ impl Tms {
         Ok(tms)
     }
 
-    /// Return the TileMatrix for a specific zoom.
-    pub fn matrix(&self, zoom: u8) -> TileMatrix {
+    /// Return the TileMatrix for a specific zoom without automatic tile matrix extension.
+    pub fn matrix_z(&self, zoom: u8) -> Option<&TileMatrix> {
         for m in &self.tms.tile_matrices {
             if m.id == zoom.to_string() {
-                return m.clone();
+                return Some(m);
             }
+        }
+        None
+    }
+
+    /// Return the TileMatrix for a specific zoom.
+    pub fn matrix(&self, zoom: u8) -> TileMatrix {
+        if let Some(m) = self.matrix_z(zoom) {
+            return m.clone();
         }
 
         let matrix_scale = (1..self.tms.tile_matrices.len())
