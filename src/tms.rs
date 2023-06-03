@@ -249,9 +249,9 @@ impl Tms {
         let x_origin = if !is_inverted { bbox.left } else { bbox.top };
         let y_origin = if !is_inverted { bbox.top } else { bbox.left };
         let corner_of_origin = if !is_inverted {
-            CornerOfOrigin::TopLeft
+            None
         } else {
-            CornerOfOrigin::BottomLeft
+            Some(CornerOfOrigin::BottomLeft)
         };
 
         let mpu = meters_per_unit(crs);

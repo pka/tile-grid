@@ -77,8 +77,7 @@ pub struct TileMatrix {
     /// description": "The corner of the tile matrix (_topLeft_ or
     /// _bottomLeft_) used as the origin for numbering tile rows and columns.
     /// This corner is also a corner of the (0, 0) tile.
-    #[serde(default)]
-    pub corner_of_origin: CornerOfOrigin,
+    pub corner_of_origin: Option<CornerOfOrigin>,
     /// Precise position in CRS coordinates of the corner of origin (e.g. the
     /// top-left corner) for this tile matrix. This position is also a corner
     /// of the (0, 0) tile. In previous version, this was 'topLeftCorner' and
