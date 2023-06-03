@@ -2,7 +2,7 @@ use crate::common::{Crs, Links};
 use crate::{BoundingBox2D, OrderedAxes, Point2D, TitleDescriptionKeywords};
 use serde::{Deserialize, Serialize};
 use serde_with::DisplayFromStr;
-use std::num::NonZeroU64;
+use std::num::{NonZeroU16, NonZeroU64};
 use std::path::PathBuf;
 
 // #[derive(Serialize)]
@@ -85,9 +85,9 @@ pub struct TileMatrix {
     /// 'cornerOfOrigin' did not exist.
     pub point_of_origin: Point2D,
     /// Width of each tile of this tile matrix in pixels
-    pub tile_width: NonZeroU64,
+    pub tile_width: NonZeroU16,
     /// Height of each tile of this tile matrix in pixels
-    pub tile_height: NonZeroU64,
+    pub tile_height: NonZeroU16,
     /// Width of the matrix (number of tiles in width)
     pub matrix_width: NonZeroU64,
     /// Height of the matrix (number of tiles in height)

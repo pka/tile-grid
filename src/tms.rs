@@ -6,7 +6,7 @@ use crate::tms_iterator::XyzIterator;
 use crate::transform::{merc_tile_ul, Transform, Transformer};
 use crate::{BoundingBox2D, CornerOfOrigin, OrderedAxes, TitleDescriptionKeywords};
 use std::f64::consts::PI;
-use std::num::NonZeroU64;
+use std::num::{NonZeroU16, NonZeroU64};
 
 /// Tile Matrix Set API.
 #[derive(Debug)]
@@ -271,8 +271,8 @@ impl Tms {
                 cell_size: *res,
                 corner_of_origin: corner_of_origin.clone(),
                 point_of_origin: [x_origin, y_origin],
-                tile_width: NonZeroU64::new(tile_width as u64).ok_or(TmsError::NonZeroError)?,
-                tile_height: NonZeroU64::new(tile_height as u64).ok_or(TmsError::NonZeroError)?,
+                tile_width: NonZeroU16::new(tile_width).ok_or(TmsError::NonZeroError)?,
+                tile_height: NonZeroU16::new(tile_height).ok_or(TmsError::NonZeroError)?,
                 matrix_width: NonZeroU64::new(maxx).ok_or(TmsError::NonZeroError)?,
                 matrix_height: NonZeroU64::new(maxy).ok_or(TmsError::NonZeroError)?,
                 variable_matrix_widths: None,
@@ -476,12 +476,12 @@ impl Tms {
         };
 
         let xtile = if !xcoord.is_infinite() {
-            ((xcoord - origin_x) / (res * u64::from(matrix.tile_width) as f64)).floor()
+            ((xcoord - origin_x) / (res * u16::from(matrix.tile_width) as f64)).floor()
         } else {
             0.0
         };
         let ytile = if !ycoord.is_infinite() {
-            ((origin_y - ycoord) / (res * u64::from(matrix.tile_height) as f64)).floor()
+            ((origin_y - ycoord) / (res * u16::from(matrix.tile_height) as f64)).floor()
         } else {
             0.0
         };
@@ -546,8 +546,8 @@ impl Tms {
             matrix.point_of_origin[1]
         };
 
-        let xcoord = origin_x + t.x as f64 * res * u64::from(matrix.tile_width) as f64;
-        let ycoord = origin_y - t.y as f64 * res * u64::from(matrix.tile_height) as f64;
+        let xcoord = origin_x + t.x as f64 * res * u16::from(matrix.tile_width) as f64;
+        let ycoord = origin_y - t.y as f64 * res * u16::from(matrix.tile_height) as f64;
         Coords::new(xcoord, ycoord)
     }
 
