@@ -106,10 +106,11 @@ fn test_tile_matrix_iter() {
 //     assert!(variable_matrix.validate().is_err());
 // }
 
-// #[test]
-// fn test_invalid_tms() {
-//     assert!(morecantile::tms::get("ANotValidName").is_err());
-// }
+#[test]
+fn test_invalid_tms() {
+    assert!(tms().get("ANotValidName").is_err());
+    assert!(tms().lookup("ANotValidName").is_err());
+}
 
 #[test]
 fn morecantile_examples() {
@@ -629,7 +630,7 @@ fn custom_lv95() {
         ],
         "LV95/CH1903+",
         "LV95",
-        None,
+        Some(vec!["E".to_string(), "N".to_string()]),
         &Crs::default(),
     )
     .unwrap();
@@ -638,6 +639,10 @@ fn custom_lv95() {
   "title": "LV95/CH1903+",
   "id": "LV95",
   "crs": "http://www.opengis.net/def/crs/EPSG/0/2056",
+  "orderedAxes": [
+    "E",
+    "N"
+  ],
   "boundingBox": {
     "lowerLeft": [
       2420000.0,
@@ -647,7 +652,11 @@ fn custom_lv95() {
       2900000.0,
       1350000.0
     ],
-    "crs": "http://www.opengis.net/def/crs/EPSG/0/2056"
+    "crs": "http://www.opengis.net/def/crs/EPSG/0/2056",
+    "orderedAxes": [
+      "E",
+      "N"
+    ]
   },
   "tileMatrices": [
     {
