@@ -11,21 +11,14 @@ pub struct BasicTransformer {
 impl Transform for BasicTransformer {
     fn from_crs(from: &Crs, to: &Crs, _always_xy: bool) -> Result<Self> {
         match (from.as_srid(), to.as_srid()) {
-            (4326, 3857) | (3857, 4326) | (4326, 4326) | (3395, 4326) | (4326, 3395) => {
-                Ok(BasicTransformer {
-                    from: from.clone(),
-                    to: to.clone(),
-                })
-            }
-            (_a, _b) => {
-                return Err(Error::TransformationUnsupported(from.clone(), to.clone()));
-            }
+            (4326, 3857) | (3857, 4326) | (3395, 4326) | (4326, 3395) => Ok(BasicTransformer {
+                from: from.clone(),
+                to: to.clone(),
+            }),
+            (_a, _b) => Err(Error::TransformationUnsupported(from.clone(), to.clone())),
         }
     }
     fn transform(&self, x: f64, y: f64) -> Result<(f64, f64)> {
-        if self.from.as_srid() == self.to.as_srid() {
-            return Ok((x, y));
-        }
         if self.from.as_srid() != 4326 || self.to.as_srid() != 3857 {
             return Err(Error::TransformationUnsupported(
                 self.from.clone(),
@@ -41,9 +34,6 @@ impl Transform for BasicTransformer {
         right: f64,
         top: f64,
     ) -> Result<(f64, f64, f64, f64)> {
-        if self.from.as_srid() == self.to.as_srid() {
-            return Ok((left, bottom, right, top));
-        }
         if self.from.as_srid() != 4326 || self.to.as_srid() != 3857 {
             return Err(Error::TransformationUnsupported(
                 self.from.clone(),

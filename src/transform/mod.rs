@@ -35,7 +35,7 @@ pub enum Error {
 
 pub type Result<T> = std::result::Result<T, Error>;
 
-// Convenience implementation for Option type
+// Handle optional Transformer as null transformation
 impl Transform for Option<Transformer> {
     fn from_crs(from: &Crs, to: &Crs, always_xy: bool) -> Result<Self> {
         Ok(Some(Transformer::from_crs(from, to, always_xy)?))

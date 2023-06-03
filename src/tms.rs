@@ -61,9 +61,9 @@ impl Tms {
         let is_quadtree = check_quadkey_support(&data.tile_matrices);
         let data_crs = data.crs.clone();
         let geographic_crs = Crs::default(); // data.get("_geographic_crs", WGS84_CRS)
-        let to_geographic = Some(Transformer::from_crs(&data_crs, &geographic_crs, true)?);
-        let from_geographic = Some(Transformer::from_crs(&geographic_crs, &data_crs, true)?);
-        // except ProjError:
+        let to_geographic = Transformer::from_crs(&data_crs, &geographic_crs, true).ok();
+        let from_geographic = Transformer::from_crs(&geographic_crs, &data_crs, true).ok();
+        // if to_geographic.is_none()
         //     warnings.warn(
         //         "Could not create coordinate Transformer from input CRS to the given geographic CRS"
         //         "some methods might not be available.",
@@ -74,8 +74,7 @@ impl Tms {
         if let Some(bounding_box) = &tms.bounding_box {
             if let Some(crs) = &bounding_box.crs {
                 if *crs != tms.crs {
-                    // TODO: return Err() if bounding_box.crs -> tms.crs not supported
-                    // let transform = Transformer::from_crs(crs, tms.crs, true)?;
+                    let _transform = Transformer::from_crs(crs, &tms.crs, true)?;
                 }
             }
         }
@@ -1041,19 +1040,15 @@ impl TileMatrixSet {
 }
 
 fn transformed_bbox(extent: &Vec<f64>, crs: &Crs, extent_crs: Option<&Crs>) -> Result<BoundingBox> {
-    let left = extent[0];
-    let bottom = extent[1];
-    let right = extent[2];
-    let top = extent[3];
-    let bbox = if let Some(extent_crs) = extent_crs {
-        let transform = Transformer::from_crs(extent_crs, crs, true)?;
-        let (left, bottom, right, top) =
-            transform.transform_bounds(left, bottom, right, top /* Some(21) */)?;
-        BoundingBox::new(left, bottom, right, top)
-    } else {
-        BoundingBox::new(left, bottom, right, top)
-    };
-    Ok(bbox)
+    let (mut left, mut bottom, mut right, mut top) = (extent[0], extent[1], extent[2], extent[3]);
+    if let Some(extent_crs) = extent_crs {
+        if extent_crs != crs {
+            let transform = Transformer::from_crs(extent_crs, crs, true)?;
+            (left, bottom, right, top) =
+                transform.transform_bounds(left, bottom, right, top /* Some(21) */)?;
+        }
+    }
+    Ok(BoundingBox::new(left, bottom, right, top))
 }
 
 /// Coefficient to convert the coordinate reference system (CRS)

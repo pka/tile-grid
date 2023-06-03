@@ -615,7 +615,6 @@ fn web_mercator_quad() -> TileMatrixSet {
 }
 
 #[test]
-#[cfg(feature = "projtransform")]
 fn custom_lv95() {
     let custom_tms = Tms::custom_resolutions(
         vec![2420000.0, 1030000.0, 2900000.0, 1350000.0],
@@ -635,7 +634,7 @@ fn custom_lv95() {
     )
     .unwrap();
 
-    let lv95_json = r##"{
+    let lv95_json = r#"{
   "title": "LV95/CH1903+",
   "id": "LV95",
   "crs": "http://www.opengis.net/def/crs/EPSG/0/2056",
@@ -1011,10 +1010,35 @@ fn custom_lv95() {
       "matrixHeight": 2500
     }
   ]
-}"##;
+}"#;
     // println!("{}", serde_json::to_string_pretty(&custom_tms.tms).unwrap());
     assert_eq!(
         serde_json::to_string_pretty(&custom_tms.tms).unwrap(),
         lv95_json
     );
+
+    let bounds = custom_tms.xy_bounds(&Tile::new(10, 4, 17)); // lake of Zurich
+    assert_eq!(
+        bounds,
+        BoundingBox::new(2676000.0, 1222000.0, 2701600.0, 1247600.0)
+    );
+
+    let bounds = custom_tms.bounds(&Tile::new(10, 4, 17)).unwrap();
+    if cfg!(feature = "projtransform") {
+        assert_eq!(
+            bounds,
+            BoundingBox::new(
+                8.444940764497613,
+                47.14117749837445,
+                8.778066288625633,
+                47.374854380218714
+            )
+        );
+    } else {
+        // Wrong result - no transformation!
+        assert_eq!(
+            bounds,
+            BoundingBox::new(2676000.0, 1222000.0, 2701600.0, 1247600.0)
+        );
+    }
 }
