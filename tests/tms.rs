@@ -155,6 +155,16 @@ fn morecantile_examples() {
     assert_eq!(tile, Tile::new(15, 10, 4));
 }
 
+#[test]
+fn mercator_tms() {
+    let tms = tms().get("WebMercatorQuad").unwrap();
+    assert_eq!(tms.crs, web_mercator_quad().crs);
+    assert_eq!(
+        tms.tile_matrices.len(),
+        web_mercator_quad().tile_matrices.len()
+    );
+}
+
 fn web_mercator_quad() -> TileMatrixSet {
     TileMatrixSet {
         title_description_keywords: TitleDescriptionKeywords {
@@ -602,4 +612,104 @@ fn web_mercator_quad() -> TileMatrixSet {
             },
         ],
     }
+}
+
+#[test]
+#[cfg(feature = "projtransform")]
+fn custom_lv95() {
+    let custom_tms = Tms::custom_resolutions(
+        vec![2420000.0, 1030000.0, 2900000.0, 1350000.0],
+        &Crs::from_epsg(2056),
+        256,
+        256,
+        Some(&Crs::from_epsg(2056)),
+        vec![
+            4000.0, 3750.0, 3500.0, 3250.0, 3000.0, 2750.0, 2500.0, 2250.0, 2000.0, 1750.0, 1500.0,
+            1250.0, 1000.0, 750.0, 650.0, 500.0, 250.0, 100.0, 50.0, 20.0, 10.0, 5.0, 2.5, 2.0,
+            1.5, 1.0, 0.5,
+        ],
+        "LV95/CH1903+",
+        "LV95",
+        None,
+        &Crs::default(),
+    )
+    .unwrap();
+
+    assert_eq!(
+        custom_tms.tms.bounding_box.as_ref().unwrap().lower_left,
+        [2420000.0, 1030000.0]
+    );
+    assert_eq!(
+        custom_tms.tms.bounding_box.as_ref().unwrap().upper_right,
+        [2900000.0, 1350000.0]
+    );
+    assert_eq!(
+        custom_tms.tms.tile_matrices[0].point_of_origin,
+        [2420000.0, 1350000.0]
+    );
+
+    let scales: Vec<f64> = custom_tms
+        .tms
+        .tile_matrices
+        .iter()
+        .map(|m| m.scale_denominator)
+        .collect();
+    assert_eq!(
+        scales,
+        vec![
+            14285714.285714287,
+            13392857.142857144,
+            12500000.000000002,
+            11607142.857142858,
+            10714285.714285715,
+            9821428.571428573,
+            8928571.42857143,
+            8035714.285714286,
+            7142857.142857144,
+            6250000.000000001,
+            5357142.857142857,
+            4464285.714285715,
+            3571428.571428572,
+            2678571.4285714286,
+            2321428.571428572,
+            1785714.285714286,
+            892857.142857143,
+            357142.85714285716,
+            178571.42857142858,
+            71428.57142857143,
+            35714.28571428572,
+            17857.14285714286,
+            8928.57142857143,
+            7142.857142857143,
+            5357.142857142858,
+            3571.4285714285716,
+            1785.7142857142858,
+        ]
+    );
+    let matrix_widths: Vec<u64> = custom_tms
+        .tms
+        .tile_matrices
+        .iter()
+        .map(|m| m.matrix_width.into())
+        .collect();
+    assert_eq!(
+        matrix_widths,
+        vec![
+            1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 8, 19, 38, 94, 188, 375, 750, 938,
+            1250, 1875, 3750,
+        ]
+    );
+    let matrix_heights: Vec<u64> = custom_tms
+        .tms
+        .tile_matrices
+        .iter()
+        .map(|m| m.matrix_height.into())
+        .collect();
+    assert_eq!(
+        matrix_heights,
+        vec![
+            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 3, 5, 13, 25, 63, 125, 250, 500, 625, 834,
+            1250, 2500,
+        ]
+    );
 }

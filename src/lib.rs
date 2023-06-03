@@ -67,7 +67,9 @@ use serde_with::DisplayFromStr;
 type Point2D = [f64; 2];
 
 /// Ordered list of names of the dimensions defined in the CRS
-type OrderedAxes = [String; 2];
+// https://docs.ogc.org/is/17-083r4/17-083r4.html#5-3-3-%C2%A0-boundingbox
+// According to JSON schema length must be >= 1
+pub type OrderedAxes = Vec<String>;
 
 #[serde_with::serde_as]
 #[serde_with::skip_serializing_none]
@@ -99,5 +101,5 @@ pub struct BoundingBox2D {
     #[serde(default)]
     #[serde_as(as = "Option<DisplayFromStr>")]
     pub crs: Option<Crs>,
-    pub orderd_axes: Option<OrderedAxes>,
+    pub ordered_axes: Option<OrderedAxes>,
 }

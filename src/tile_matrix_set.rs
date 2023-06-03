@@ -1,5 +1,5 @@
 use crate::common::{Crs, Links};
-use crate::{BoundingBox2D, Point2D, TitleDescriptionKeywords};
+use crate::{BoundingBox2D, OrderedAxes, Point2D, TitleDescriptionKeywords};
 use serde::{Deserialize, Serialize};
 use serde_with::DisplayFromStr;
 use std::num::NonZeroU64;
@@ -141,11 +141,19 @@ impl TileMatrixSet {
     /// Check if CRS has inverted AXIS (lat,lon) instead of (lon,lat).
     pub(crate) fn crs_axis_inverted(&self) -> bool {
         if let Some(axes) = &self.ordered_axes {
-            axes[0] == "Y" || axes[0] == "LAT" || axes[0] == "N"
+            ordered_axes_inverted(&axes)
         } else {
             false // TODO: Check CRS axis ordering
         }
     }
+}
+
+pub(crate) fn ordered_axes_inverted(axes: &OrderedAxes) -> bool {
+    first_axes_inverted(&axes[0].to_uppercase())
+}
+
+fn first_axes_inverted(first: &str) -> bool {
+    first == "Y" || first == "LAT" || first == "N"
 }
 
 #[cfg(test)]

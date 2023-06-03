@@ -1,10 +1,10 @@
 use crate::common::Crs;
 use crate::quadkey::check_quadkey_support;
 use crate::tile::{BoundingBox, Coords, Tile};
-use crate::tile_matrix_set::{TileMatrix, TileMatrixSet};
+use crate::tile_matrix_set::{ordered_axes_inverted, TileMatrix, TileMatrixSet};
 use crate::tms_iterator::XyzIterator;
 use crate::transform::{merc_tile_ul, Transform, Transformer};
-use crate::TitleDescriptionKeywords;
+use crate::{BoundingBox2D, CornerOfOrigin, OrderedAxes, TitleDescriptionKeywords};
 use std::f64::consts::PI;
 use std::num::NonZeroU64;
 
@@ -32,6 +32,8 @@ pub enum TmsError {
     PointOutsideBounds(f64, f64, BoundingBox),
     #[error(transparent)]
     TransformationError(#[from] crate::transform::Error),
+    #[error("Zero width or height")]
+    NonZeroError,
     // #[error("Raised when math errors occur beyond ~85 degrees N or S")]
     // InvalidLatitudeError,
     // #[error("TileMatrix not found for level: {0} - Unable to construct tileMatrix for TMS with variable scale")]
@@ -49,7 +51,7 @@ pub type Result<T> = std::result::Result<T, TmsError>;
 impl Clone for Tms {
     // Custom impl because `Clone` is not implemented for `Proj`
     fn clone(&self) -> Tms {
-        Tms::init(&self.tms).unwrap()
+        Tms::init(&self.tms).expect("Repeating initialization")
     }
 }
 
@@ -145,7 +147,8 @@ impl Tms {
     /// * `minzoom` - Tile Matrix Set minimum zoom level (default is 0).
     /// * `maxzoom` - Tile Matrix Set maximum zoom level (default is 24).
     /// * `title` - Tile Matrix Set title (default is 'Custom TileMatrixSet')
-    /// * `identifier` - Tile Matrix Set identifier (default is 'Custom')
+    /// * `id` - Tile Matrix Set identifier (default is 'Custom')
+    /// * `ordered_axes`
     /// * `geographic_crs` - Geographic (lat,lon) coordinate reference system (default is EPSG:4326)
     pub fn custom(
         extent: Vec<f64>,
@@ -157,88 +160,128 @@ impl Tms {
         minzoom: u8,                   // = 0,
         maxzoom: u8,                   // = 24,
         title: &str,                   // = "Custom TileMatrixSet",
-        identifier: &str,              // = "Custom",
-        geographic_crs: &Crs,          // = WGS84_CRS,
-    ) -> Self {
-        todo!()
-        /*
+        id: &str,                      // = "Custom",
+        ordered_axes: Option<OrderedAxes>,
+        geographic_crs: &Crs, // = WGS84_CRS,
+    ) -> Result<Self> {
         let matrix_scale = matrix_scale.unwrap_or(vec![1, 1]);
+        let bbox = transformed_bbox(&extent, crs, extent_crs)?;
+        let width = (bbox.right - bbox.left).abs();
+        let height = (bbox.top - bbox.bottom).abs();
+        let resolutions: Vec<f64> = (minzoom..=maxzoom)
+            .map(|zoom| {
+                f64::max(
+                    width
+                        / (tile_width as f64 * matrix_scale[0] as f64)
+                        / 2_u64.pow(zoom as u32) as f64,
+                    height
+                        / (tile_height as f64 * matrix_scale[1] as f64)
+                        / 2_u64.pow(zoom as u32) as f64,
+                )
+            })
+            .collect();
+        Self::custom_resolutions(
+            extent,
+            crs,
+            tile_width,
+            tile_height,
+            extent_crs,
+            resolutions,
+            title,
+            id,
+            ordered_axes,
+            geographic_crs,
+        )
+    }
 
-        let mut tms: TileMatrixSet = TileMatrixSet {
-            title: title.to_string(),
-            abstract_: None,
-            keywords: None,
-            identifier: identifier.to_string(),
-            crs: crs.to_string(),
+    /// Construct a custom TileMatrixSet with given resolutions
+    pub fn custom_resolutions(
+        extent: Vec<f64>,
+        crs: &Crs,
+        tile_width: u16,
+        tile_height: u16,
+        extent_crs: Option<&Crs>,
+        resolutions: Vec<f64>,
+        title: &str,
+        id: &str,
+        ordered_axes: Option<OrderedAxes>,
+        geographic_crs: &Crs,
+    ) -> Result<Self> {
+        let mut tms = TileMatrixSet {
+            title_description_keywords: TitleDescriptionKeywords {
+                title: Some(title.to_string()),
+                description: None,
+                keywords: None,
+            },
+            id: id.to_string(),
+            uri: None,
+            crs: crs.clone(),
+            ordered_axes: ordered_axes.clone(),
             well_known_scale_set: None,
             bounding_box: None,
-            tile_matrices: Vec::new(),
+            tile_matrices: Vec::with_capacity(resolutions.len()),
         };
 
-        let is_inverted = tms.crs_axis_inverted();
+        let is_inverted = if let Some(ordered_axes) = &ordered_axes {
+            ordered_axes_inverted(ordered_axes)
+        } else {
+            tms.crs_axis_inverted()
+        };
 
         tms.bounding_box = Some(if is_inverted {
             BoundingBox2D {
-                crs: extent_crs.unwrap_or(crs).to_string(),
+                crs: Some(extent_crs.unwrap_or(crs).clone()),
+                ordered_axes: ordered_axes.clone(),
                 lower_left: [extent[1], extent[0]],
                 upper_right: [extent[3], extent[2]],
             }
         } else {
             BoundingBox2D {
-                type_: "BoundingBoxType".to_string(),
-                crs: extent_crs.unwrap_or(crs).to_string(),
+                crs: Some(extent_crs.unwrap_or(crs).clone()),
+                ordered_axes: ordered_axes.clone(),
                 lower_left: [extent[0], extent[1]],
                 upper_right: [extent[2], extent[3]],
             }
         });
 
-        let left = extent[0];
-        let bottom = extent[1];
-        let right = extent[2];
-        let top = extent[3];
-        let bbox = if let Some(extent_crs) = extent_crs {
-            let transform = Transformer::from_crs(extent_crs, crs, true);
-            let (left, bottom, right, top) =
-                transform.transform_bounds(left, bottom, right, top /* Some(21) */);
-            BoundingBox::new(left, bottom, right, top)
-        } else {
-            BoundingBox::new(left, bottom, right, top)
-        };
+        let bbox = transformed_bbox(&extent, crs, extent_crs)?;
 
         let x_origin = if !is_inverted { bbox.left } else { bbox.top };
         let y_origin = if !is_inverted { bbox.top } else { bbox.left };
+        let corner_of_origin = if !is_inverted {
+            CornerOfOrigin::TopLeft
+        } else {
+            CornerOfOrigin::BottomLeft
+        };
 
-        let width = (bbox.right - bbox.left).abs();
-        let height = (bbox.top - bbox.bottom).abs();
         let mpu = meters_per_unit(crs);
-        for zoom in minzoom..=maxzoom {
-            let res = f64::max(
-                width
-                    / (tile_width as f64 * matrix_scale[0] as f64)
-                    / 2_u64.pow(zoom as u32) as f64,
-                height
-                    / (tile_height as f64 * matrix_scale[1] as f64)
-                    / 2_u64.pow(zoom as u32) as f64,
-            );
-            tms.tile_matrix.push(TileMatrix {
-                type_: "TileMatrixType".to_string(),
-                title: None,
-                abstract_: None,
-                keywords: None,
-                identifier: zoom.to_string(),
+        for (zoom, res) in resolutions.iter().enumerate() {
+            let unitheight = tile_height as f64 * res;
+            let unitwidth = tile_width as f64 * res;
+            let maxy = ((bbox.top - bbox.bottom - 0.01 * unitheight) / unitheight).ceil() as u64;
+            let maxx = ((bbox.right - bbox.left - 0.01 * unitwidth) / unitwidth).ceil() as u64;
+            tms.tile_matrices.push(TileMatrix {
+                title_description_keywords: TitleDescriptionKeywords {
+                    title: None,
+                    description: None,
+                    keywords: None,
+                },
+                id: zoom.to_string(),
                 scale_denominator: res * mpu as f64 / 0.00028,
+                cell_size: *res,
+                corner_of_origin: corner_of_origin.clone(),
                 point_of_origin: [x_origin, y_origin],
-                tile_width,
-                tile_height,
-                matrix_width: matrix_scale[0] as u64 * 2_u64.pow(zoom as u32),
-                matrix_height: matrix_scale[1] as u64 * 2_u64.pow(zoom as u32),
+                tile_width: NonZeroU64::new(tile_width as u64).ok_or(TmsError::NonZeroError)?,
+                tile_height: NonZeroU64::new(tile_height as u64).ok_or(TmsError::NonZeroError)?,
+                matrix_width: NonZeroU64::new(maxx).ok_or(TmsError::NonZeroError)?,
+                matrix_height: NonZeroU64::new(maxy).ok_or(TmsError::NonZeroError)?,
+                variable_matrix_widths: None,
             });
         }
 
-        let mut tms = TileMatrixSet::init(tms);
-        tms.geographic_crs = geographic_crs.to_string();
-        tms
-        */
+        let mut tms = Tms::init(&tms)?;
+        tms.geographic_crs = geographic_crs.clone();
+        Ok(tms)
     }
 
     /// Return the TileMatrix for a specific zoom.
@@ -995,6 +1038,22 @@ impl TileMatrixSet {
     pub fn into_tms(&self) -> Result<Tms> {
         Tms::init(&self)
     }
+}
+
+fn transformed_bbox(extent: &Vec<f64>, crs: &Crs, extent_crs: Option<&Crs>) -> Result<BoundingBox> {
+    let left = extent[0];
+    let bottom = extent[1];
+    let right = extent[2];
+    let top = extent[3];
+    let bbox = if let Some(extent_crs) = extent_crs {
+        let transform = Transformer::from_crs(extent_crs, crs, true)?;
+        let (left, bottom, right, top) =
+            transform.transform_bounds(left, bottom, right, top /* Some(21) */)?;
+        BoundingBox::new(left, bottom, right, top)
+    } else {
+        BoundingBox::new(left, bottom, right, top)
+    };
+    Ok(bbox)
 }
 
 /// Coefficient to convert the coordinate reference system (CRS)
