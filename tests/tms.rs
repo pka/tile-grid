@@ -20,7 +20,6 @@ fn test_tile_matrix_set() {
 
     // Load TileMatrixSet in models.
     // Confirm model validation is working
-    #[cfg(feature = "projtransform")] // TODO: load only Mercator TMS
     for tileset in tilesets {
         // let ts = TileMatrixSet::parse_file(tilesets).unwrap();
         let data = std::fs::read_to_string(tileset).unwrap();
@@ -28,6 +27,59 @@ fn test_tile_matrix_set() {
         // This would fail if `supportedCRS` isn't supported by PROJ
         assert!(tms.crs().as_known_crs().len() > 0);
     }
+}
+
+#[test]
+fn test_zoom_for_res() {
+    let tms = tms().lookup("WebMercatorQuad").unwrap();
+
+    // native resolution of zoom 7 is 1222.9924525628178
+    // native resolution of zoom 8 is 611.4962262814075
+    assert_eq!(
+        tms.zoom_for_res(612.0, None, &ZoomLevelStrategy::Auto, None)
+            .unwrap(),
+        8
+    );
+    assert_eq!(
+        tms.zoom_for_res(612.0, None, &ZoomLevelStrategy::Lower, None)
+            .unwrap(),
+        7
+    );
+    assert_eq!(
+        tms.zoom_for_res(612.0, None, &ZoomLevelStrategy::Upper, None)
+            .unwrap(),
+        8
+    );
+
+    assert_eq!(
+        tms.zoom_for_res(610.0, None, &ZoomLevelStrategy::Auto, None)
+            .unwrap(),
+        8
+    );
+
+    // native resolution of zoom 24 is 0.009330691929342784
+    assert_eq!(
+        tms.zoom_for_res(0.0001, None, &ZoomLevelStrategy::Auto, None)
+            .unwrap(),
+        24
+    );
+
+    // theoritical resolution of zoom 25 is 0.004665345964671392
+    // (morecantile emits warning and returns 25)
+    assert_eq!(
+        tms.zoom_for_res(0.0001, Some(25), &ZoomLevelStrategy::Auto, None)
+            .unwrap(),
+        24
+    );
+
+    // minzoom greater than 0
+    // crs = CRS.from_epsg(3857)
+    // extent = [-20026376.39, -20048966.10, 20026376.39, 20048966.10]
+    // tms = morecantile.TileMatrixSet.custom(
+    //     extent, crs, id="MyCustomTmsEPSG3857", minzoom=6
+    // )
+    // assert_eq!(tms.zoom_for_res(10, None, &ZoomLevelStrategy::Auto, None).unwrap(), 14);
+    // assert_eq!(tms.zoom_for_res(5000, None, &ZoomLevelStrategy::Auto, None).unwrap(), 6);
 }
 
 #[test]

@@ -24,8 +24,6 @@ pub struct Tms {
 pub enum TmsError {
     #[error("Invalid tile zoom identifier: `{0}`")]
     InvalidZoomId(String),
-    #[error("Invalid strategy: `{0}`. Should be one of lower|upper|auto")]
-    InvalidZoomLevelStrategy(String),
     #[error("Invalid zoom level: `{0}`")]
     InvalidZoom(u8),
     #[error("Point ({0}, {1}) is outside bounds {2:?}")]
@@ -53,6 +51,12 @@ impl Clone for Tms {
     fn clone(&self) -> Tms {
         Tms::init(&self.tms).expect("Repeating initialization")
     }
+}
+
+pub enum ZoomLevelStrategy {
+    Lower,
+    Upper,
+    Auto,
 }
 
 impl Tms {
@@ -365,41 +369,39 @@ impl Tms {
     ///
     /// # Returns:
     /// * TMS zoom for a given resolution.
-    ///
-    /// # Examples:
-    /// `zoom_for_res(430.021)`
     pub fn zoom_for_res(
         &self,
         res: f64,
         max_z: Option<u8>,
-        zoom_level_strategy: &str,
+        zoom_level_strategy: &ZoomLevelStrategy,
         min_z: Option<u8>,
     ) -> Result<u8> {
         let max_z = max_z.unwrap_or(self.maxzoom());
         let min_z = min_z.unwrap_or(self.minzoom());
         let mut zoom_level = min_z;
-        let mut matrix_res = 0.0; // TODO: check default
-        for zoom_level in min_z..=max_z {
+        let mut matrix_res = 0.0;
+        for z in min_z..=max_z {
+            zoom_level = z;
             matrix_res = self.resolution(&self.matrix(zoom_level));
             if res > matrix_res || (res - matrix_res).abs() / matrix_res <= 1e-8 {
                 break;
             }
         }
         if zoom_level > 0 && (res - matrix_res).abs() / matrix_res > 1e-8 {
-            if zoom_level_strategy.to_lowercase() == "lower" {
-                zoom_level = u8::max(zoom_level - 1, min_z);
-            } else if zoom_level_strategy.to_lowercase() == "upper" {
-                zoom_level = u8::min(zoom_level, max_z);
-            } else if zoom_level_strategy.to_lowercase() == "auto" {
-                if (self.resolution(&self.matrix(u8::max(zoom_level - 1, min_z))) / res)
-                    < (res / matrix_res)
-                {
+            match zoom_level_strategy {
+                ZoomLevelStrategy::Lower => {
                     zoom_level = u8::max(zoom_level - 1, min_z);
                 }
-            } else {
-                return Err(TmsError::InvalidZoomLevelStrategy(
-                    zoom_level_strategy.to_string(),
-                ));
+                ZoomLevelStrategy::Upper => {
+                    zoom_level = u8::min(zoom_level, max_z);
+                }
+                ZoomLevelStrategy::Auto => {
+                    if (self.resolution(&self.matrix(u8::max(zoom_level - 1, min_z))) / res)
+                        < (res / matrix_res)
+                    {
+                        zoom_level = u8::max(zoom_level - 1, min_z);
+                    }
+                }
             }
         }
         Ok(zoom_level)
