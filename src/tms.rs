@@ -5,6 +5,7 @@ use crate::tile_matrix_set::{ordered_axes_inverted, TileMatrix, TileMatrixSet};
 use crate::tms_iterator::XyzIterator;
 use crate::transform::{merc_tile_ul, Transform, Transformer};
 use crate::{BoundingBox2D, CornerOfOrigin, OrderedAxes, TitleDescriptionKeywords};
+use std::convert::AsRef;
 use std::f64::consts::PI;
 use std::num::{NonZeroU16, NonZeroU64};
 
@@ -50,6 +51,20 @@ impl Clone for Tms {
     // Custom impl because `Clone` is not implemented for `Proj`
     fn clone(&self) -> Tms {
         Tms::init(&self.tms).expect("Repeating initialization")
+    }
+}
+
+pub enum Matrix<'a> {
+    Predefined(&'a TileMatrix),
+    Calculated(TileMatrix),
+}
+
+impl AsRef<TileMatrix> for Matrix<'_> {
+    fn as_ref(&self) -> &TileMatrix {
+        match self {
+            Matrix::Predefined(m) => *m,
+            Matrix::Calculated(m) => m,
+        }
     }
 }
 
@@ -293,9 +308,9 @@ impl Tms {
     }
 
     /// Return the TileMatrix for a specific zoom.
-    pub fn matrix(&self, zoom: u8) -> TileMatrix {
+    pub fn matrix(&self, zoom: u8) -> Matrix<'_> {
         if let Some(m) = self.matrix_z(zoom) {
-            return m.clone();
+            return Matrix::Predefined(m);
         }
 
         let matrix_scale = (1..self.tms.tile_matrices.len())
@@ -312,11 +327,6 @@ impl Tms {
             //     zoom
             // );
         }
-
-        println!(
-            "TileMatrix not found for level: {} - Creating values from TMS Scale.",
-            zoom
-        );
 
         let mut tile_matrix = self.tms.tile_matrices.last().unwrap().clone();
         let factor = 1.0 / matrix_scale[0];
@@ -346,7 +356,7 @@ impl Tms {
             }
         }
 
-        tile_matrix
+        Matrix::Calculated(tile_matrix)
     }
 
     /// Tile resolution for a TileMatrix.
@@ -385,7 +395,7 @@ impl Tms {
         let mut matrix_res = 0.0;
         for z in min_z..=max_z {
             zoom_level = z;
-            matrix_res = self.resolution(&self.matrix(zoom_level));
+            matrix_res = self.resolution(self.matrix(zoom_level).as_ref());
             if res > matrix_res || (res - matrix_res).abs() / matrix_res <= 1e-8 {
                 break;
             }
@@ -399,7 +409,7 @@ impl Tms {
                     zoom_level = u8::min(zoom_level, max_z);
                 }
                 ZoomLevelStrategy::Auto => {
-                    if (self.resolution(&self.matrix(u8::max(zoom_level - 1, min_z))) / res)
+                    if (self.resolution(self.matrix(u8::max(zoom_level - 1, min_z)).as_ref()) / res)
                         < (res / matrix_res)
                     {
                         zoom_level = u8::max(zoom_level - 1, min_z);
@@ -471,8 +481,9 @@ impl Tms {
     /// * `xcoord`, ycoord - A `X` and `Y` pair in TMS coordinate reference system.
     /// * `zoom` - The zoom level.
     pub fn xy_tile(&self, xcoord: f64, ycoord: f64, zoom: u8) -> Tile {
-        let matrix = self.matrix(zoom);
-        let res = self.resolution(&matrix);
+        let m = self.matrix(zoom);
+        let matrix = m.as_ref();
+        let res = self.resolution(matrix);
 
         let origin_x: f64 = if self.invert_axis() {
             matrix.point_of_origin[1]
@@ -541,9 +552,9 @@ impl Tms {
     /// # Arguments
     /// * `tile`: (x, y, z) tile coordinates or a Tile object we want the upper left coordinates of.
     pub fn xy_ul(&self, tile: &Tile) -> Coords {
-        let t = tile;
-        let matrix = self.matrix(t.z);
-        let res = self.resolution(&matrix);
+        let m = self.matrix(tile.z);
+        let matrix = m.as_ref();
+        let res = self.resolution(matrix);
 
         let origin_x = if self.invert_axis() {
             matrix.point_of_origin[1]
@@ -556,8 +567,8 @@ impl Tms {
             matrix.point_of_origin[1]
         };
 
-        let xcoord = origin_x + t.x as f64 * res * u16::from(matrix.tile_width) as f64;
-        let ycoord = origin_y - t.y as f64 * res * u16::from(matrix.tile_height) as f64;
+        let xcoord = origin_x + tile.x as f64 * res * u16::from(matrix.tile_width) as f64;
+        let ycoord = origin_y - tile.y as f64 * res * u16::from(matrix.tile_height) as f64;
         Coords::new(xcoord, ycoord)
     }
 
@@ -566,10 +577,8 @@ impl Tms {
     /// # Arguments
     /// * `tile`: Tile object we want the bounding box of.
     pub fn xy_bounds(&self, tile: &Tile) -> BoundingBox {
-        let t = tile; // parse_tile_arg(tile);
-
-        let top_left = self.xy_ul(&t);
-        let bottom_right = self.xy_ul(&Tile::new(t.x + 1, t.y + 1, t.z));
+        let top_left = self.xy_ul(tile);
+        let bottom_right = self.xy_ul(&Tile::new(tile.x + 1, tile.y + 1, tile.z));
         BoundingBox::new(top_left.x, bottom_right.y, bottom_right.x, top_left.y)
     }
 
@@ -593,10 +602,8 @@ impl Tms {
     /// # Arguments
     /// * `tile` - Tile object we want the bounding box of.
     pub fn bounds(&self, tile: &Tile) -> Result<BoundingBox> {
-        let t = tile; // parse_tile_arg(tile);
-
-        let top_left = self.ul(t)?;
-        let bottom_right = self.ul(&Tile::new(t.x + 1, t.y + 1, t.z))?;
+        let top_left = self.ul(tile)?;
+        let bottom_right = self.ul(&Tile::new(tile.x + 1, tile.y + 1, tile.z))?;
         Ok(BoundingBox::new(
             top_left.x,
             bottom_right.y,
@@ -635,7 +642,8 @@ impl Tms {
             }
         } else {
             let zoom = self.minzoom();
-            let matrix = self.matrix(zoom);
+            let m = self.matrix(zoom);
+            let matrix = m.as_ref();
             let top_left = self.xy_ul(&Tile::new(0, 0, zoom));
             let bottom_right = self.xy_ul(&Tile::new(
                 u64::from(matrix.matrix_width),
@@ -778,7 +786,7 @@ impl Tms {
         let n = extend.top.min(bbox.top);
         (minzoom..=maxzoom)
             .map(|z| {
-                let res = self.resolution(&self.matrix(z)) / 10.0;
+                let res = self.resolution(self.matrix(z).as_ref()) / 10.0;
                 let ul_tile = self.xy_tile(w + res, n - res, z);
                 let lr_tile = self.xy_tile(e - res, s + res, z);
                 MinMax {
@@ -900,7 +908,8 @@ impl Tms {
     /// # Arguments
     /// * `zoom` - The zoom level.
     fn minmax(&self, zoom: u8) -> MinMax {
-        let m = self.matrix(zoom);
+        let matrix = self.matrix(zoom);
+        let m = matrix.as_ref();
         MinMax {
             x_min: 0,
             x_max: u64::from(m.matrix_width).saturating_sub(1),
@@ -911,15 +920,13 @@ impl Tms {
 
     /// Check if a tile is valid.
     pub fn is_valid(&self, tile: &Tile) -> bool {
-        let t = tile; // parse_tile_arg(tile);
-
-        if t.z < self.minzoom() {
+        if tile.z < self.minzoom() {
             return false;
         }
 
-        let extrema = self.minmax(t.z);
-        let validx = extrema.x_min <= t.x && t.x <= extrema.x_max;
-        let validy = extrema.y_min <= t.y && t.y <= extrema.y_max;
+        let extrema = self.minmax(tile.z);
+        let validx = extrema.x_min <= tile.x && tile.x <= extrema.x_max;
+        let validy = extrema.y_min <= tile.y && tile.y <= extrema.y_max;
 
         validx && validy
     }
@@ -935,13 +942,12 @@ impl Tms {
     /// # Arguments
     /// * `tile` - instance of Tile
     pub fn neighbors(&self, tile: &Tile) -> Vec<Tile> {
-        let t = tile; // parse_tile_arg(tile);
-        let extrema = self.minmax(t.z);
+        let extrema = self.minmax(tile.z);
 
         let mut tiles = Vec::new();
-        for x in t.x.saturating_sub(1)..=t.x.saturating_add(1) {
-            for y in t.y.saturating_sub(1)..=t.y.saturating_add(1) {
-                if x == t.x && y == t.y {
+        for x in tile.x.saturating_sub(1)..=tile.x.saturating_add(1) {
+            for y in tile.y.saturating_sub(1)..=tile.y.saturating_add(1) {
+                if x == tile.x && y == tile.y {
                     continue;
                 } else if x < extrema.x_min || y < extrema.y_min {
                     continue;
@@ -949,7 +955,7 @@ impl Tms {
                     continue;
                 }
 
-                tiles.push(Tile::new(x, y, t.z));
+                tiles.push(Tile::new(x, y, tile.z));
             }
         }
 
@@ -984,7 +990,7 @@ impl Tms {
             None => tile.z - 1,
         };
 
-        let res = self.resolution(&self.matrix(tile.z)) / 10.0;
+        let res = self.resolution(self.matrix(tile.z).as_ref()) / 10.0;
 
         let bbox = self.xy_bounds(tile);
         let ul_tile = self.xy_tile(bbox.left + res, bbox.top - res, target_zoom);
@@ -1024,7 +1030,7 @@ impl Tms {
         };
 
         let bbox = self.xy_bounds(tile);
-        let res = self.resolution(&self.matrix(tile.z)) / 10.0;
+        let res = self.resolution(self.matrix(tile.z).as_ref()) / 10.0;
 
         let ul_tile = self.xy_tile(bbox.left + res, bbox.top - res, target_zoom);
         let lr_tile = self.xy_tile(bbox.right - res, bbox.bottom + res, target_zoom);
