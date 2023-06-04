@@ -67,11 +67,6 @@ impl Tms {
         let geographic_crs = Crs::default(); // data.get("_geographic_crs", WGS84_CRS)
         let to_geographic = Transformer::from_crs(&data_crs, &geographic_crs, true).ok();
         let from_geographic = Transformer::from_crs(&geographic_crs, &data_crs, true).ok();
-        // if to_geographic.is_none()
-        //     warnings.warn(
-        //         "Could not create coordinate Transformer from input CRS to the given geographic CRS"
-        //         "some methods might not be available.",
-        //         UserWarning,
         let mut tms = data.clone();
         Self::sort_tile_matrices(&mut tms)?;
         // Check bounding box CRS (TODO: should we store it?)
@@ -417,8 +412,11 @@ impl Tms {
 
     /// Transform point(x,y) to geographic longitude and latitude.
     fn lnglat(&self, x: f64, y: f64, truncate: bool /* =False */) -> Result<Coords> {
+        let Some(transformer) = &self.to_geographic else {
+            return Err(self.transform_error_to_geographic())
+        };
         point_in_bbox(Coords::new(x, y), self.xy_bbox(), DEFAULT_BBOX_PREC)?;
-        let (mut lng, mut lat) = self.to_geographic.transform(x, y)?;
+        let (mut lng, mut lat) = transformer.transform(x, y)?;
 
         if truncate {
             (lng, lat) = self.truncate_lnglat(lng, lat)?;
@@ -429,9 +427,12 @@ impl Tms {
 
     /// Transform geographic longitude and latitude coordinates to TMS CRS
     pub fn xy(&self, lng: f64, lat: f64) -> Result<Coords> {
+        let Some(transformer) = &self.from_geographic else {
+            return Err(self.transform_error_from_geographic())
+        };
         point_in_bbox(Coords::new(lng, lat), self.xy_bbox(), DEFAULT_BBOX_PREC)?;
 
-        let (x, y) = self.from_geographic.transform(lng, lat)?;
+        let (x, y) = transformer.transform(lng, lat)?;
 
         Ok(Coords::new(x, y))
     }
@@ -653,8 +654,11 @@ impl Tms {
 
     /// Return TMS bounding box in geographic coordinate reference system.
     pub fn bbox(&self) -> Result<BoundingBox> {
+        let Some(transformer) = &self.to_geographic else {
+            return Err(self.transform_error_to_geographic())
+        };
         let xy_bbox = self.xy_bbox();
-        let bbox = self.to_geographic.transform_bounds(
+        let bbox = transformer.transform_bounds(
             xy_bbox.left,
             xy_bbox.bottom,
             xy_bbox.right,
@@ -1032,6 +1036,22 @@ impl Tms {
         }
 
         Ok(tiles)
+    }
+
+    fn transform_error_to_geographic(&self) -> TmsError {
+        crate::transform::Error::TransformationUnsupported(
+            self.data_crs.clone(),
+            self.geographic_crs.clone(),
+        )
+        .into()
+    }
+
+    fn transform_error_from_geographic(&self) -> TmsError {
+        crate::transform::Error::TransformationUnsupported(
+            self.geographic_crs.clone(),
+            self.data_crs.clone(),
+        )
+        .into()
     }
 }
 

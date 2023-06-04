@@ -34,30 +34,3 @@ pub enum Error {
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
-
-// Handle optional Transformer as null transformation
-impl Transform for Option<Transformer> {
-    fn from_crs(from: &Crs, to: &Crs, always_xy: bool) -> Result<Self> {
-        Ok(Some(Transformer::from_crs(from, to, always_xy)?))
-    }
-    fn transform(&self, x: f64, y: f64) -> Result<(f64, f64)> {
-        if let Some(transform) = self {
-            transform.transform(x, y)
-        } else {
-            Ok((x, y))
-        }
-    }
-    fn transform_bounds(
-        &self,
-        left: f64,
-        bottom: f64,
-        right: f64,
-        top: f64,
-    ) -> Result<(f64, f64, f64, f64)> {
-        if let Some(transform) = self {
-            transform.transform_bounds(left, bottom, right, top)
-        } else {
-            Ok((left, bottom, right, top))
-        }
-    }
-}

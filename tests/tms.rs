@@ -1075,10 +1075,10 @@ fn custom_lv95() {
         BoundingBox::new(2676000.0, 1222000.0, 2701600.0, 1247600.0)
     );
 
-    let bounds = custom_tms.bounds(&Tile::new(10, 4, 17)).unwrap();
+    let bounds = custom_tms.bounds(&Tile::new(10, 4, 17));
     if cfg!(feature = "projtransform") {
         assert_eq!(
-            bounds,
+            bounds.unwrap(),
             BoundingBox::new(
                 8.444940764497613,
                 47.14117749837445,
@@ -1087,10 +1087,9 @@ fn custom_lv95() {
             )
         );
     } else {
-        // Wrong result - no transformation!
         assert_eq!(
-            bounds,
-            BoundingBox::new(2676000.0, 1222000.0, 2701600.0, 1247600.0)
+            bounds.unwrap_err().to_string(),
+            r#"Unsupported transformation from `Crs { authority: EPSG, version: "0", code: "2056" }` to `Crs { authority: OGC, version: "1.3", code: "CRS84" }`"#
         );
     }
 }
