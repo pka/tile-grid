@@ -3,7 +3,7 @@ use crate::quadkey::check_quadkey_support;
 use crate::tile::{BoundingBox, Coords, Tile};
 use crate::tile_matrix_set::{ordered_axes_inverted, TileMatrix, TileMatrixSet};
 use crate::tms_iterator::XyzIterator;
-use crate::transform::{merc_tile_ul, Transform, Transformer};
+use crate::transform::{merc_tile_ul, Error::TransformationUnsupported, Transform, Transformer};
 use crate::{BoundingBox2D, CornerOfOrigin, OrderedAxes, TitleDescriptionKeywords};
 use std::convert::AsRef;
 use std::f64::consts::PI;
@@ -1045,19 +1045,11 @@ impl Tms {
     }
 
     fn transform_error_to_geographic(&self) -> TmsError {
-        crate::transform::Error::TransformationUnsupported(
-            self.data_crs.clone(),
-            self.geographic_crs.clone(),
-        )
-        .into()
+        TransformationUnsupported(self.data_crs.clone(), self.geographic_crs.clone()).into()
     }
 
     fn transform_error_from_geographic(&self) -> TmsError {
-        crate::transform::Error::TransformationUnsupported(
-            self.geographic_crs.clone(),
-            self.data_crs.clone(),
-        )
-        .into()
+        TransformationUnsupported(self.geographic_crs.clone(), self.data_crs.clone()).into()
     }
 }
 
