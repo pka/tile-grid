@@ -1,3 +1,14 @@
+## 0.5.0 (UNRELEASED)
+
+* Rename `Tile` to `Xyz`
+* Only return errors for unsupported transformations when
+  methods requiring transformations are called
+* `matrix` method returns `AsRef<TileMatrix>` instead of cloned matrix
+* Fix `zoom_for_res` and pass enum for strategy
+* Construct TMS from custom resolutions
+* Impl Clone for `Tms` and `TileMatrixSets`
+* Change `tile_width`/`tile_height` from u64 to u16
+
 ## 0.4.0
 
 * New implementation based on OGC TileMatrixSets 2.0

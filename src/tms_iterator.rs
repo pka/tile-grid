@@ -5,7 +5,7 @@
 
 //! TMS iterators
 
-use crate::{MinMax, Tile};
+use crate::{MinMax, Xyz};
 
 /// Level-by-level iterator
 pub struct XyzIterator {
@@ -48,13 +48,13 @@ impl XyzIterator {
 }
 
 impl Iterator for XyzIterator {
-    type Item = Tile;
+    type Item = Xyz;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.finished {
             return None;
         }
-        let current = Tile::new(self.x, self.y, self.z);
+        let current = Xyz::new(self.x, self.y, self.z);
         let limit = &self.limits[(self.z - self.z_min) as usize];
         if self.y < limit.y_max {
             self.y += 1;
@@ -75,7 +75,7 @@ impl Iterator for XyzIterator {
 
 #[cfg(test)]
 mod test {
-    use crate::{tms, Tile};
+    use crate::{tms, Xyz};
 
     #[test]
     fn test_mercator_iter() {
@@ -85,27 +85,27 @@ mod test {
         assert_eq!(
             cells,
             vec![
-                Tile::new(0, 0, 0),
-                Tile::new(0, 0, 1),
-                Tile::new(0, 1, 1),
-                Tile::new(1, 0, 1),
-                Tile::new(1, 1, 1),
-                Tile::new(0, 0, 2),
-                Tile::new(0, 1, 2),
-                Tile::new(0, 2, 2),
-                Tile::new(0, 3, 2),
-                Tile::new(1, 0, 2),
-                Tile::new(1, 1, 2),
-                Tile::new(1, 2, 2),
-                Tile::new(1, 3, 2),
-                Tile::new(2, 0, 2),
-                Tile::new(2, 1, 2),
-                Tile::new(2, 2, 2),
-                Tile::new(2, 3, 2),
-                Tile::new(3, 0, 2),
-                Tile::new(3, 1, 2),
-                Tile::new(3, 2, 2),
-                Tile::new(3, 3, 2)
+                Xyz::new(0, 0, 0),
+                Xyz::new(0, 0, 1),
+                Xyz::new(0, 1, 1),
+                Xyz::new(1, 0, 1),
+                Xyz::new(1, 1, 1),
+                Xyz::new(0, 0, 2),
+                Xyz::new(0, 1, 2),
+                Xyz::new(0, 2, 2),
+                Xyz::new(0, 3, 2),
+                Xyz::new(1, 0, 2),
+                Xyz::new(1, 1, 2),
+                Xyz::new(1, 2, 2),
+                Xyz::new(1, 3, 2),
+                Xyz::new(2, 0, 2),
+                Xyz::new(2, 1, 2),
+                Xyz::new(2, 2, 2),
+                Xyz::new(2, 3, 2),
+                Xyz::new(3, 0, 2),
+                Xyz::new(3, 1, 2),
+                Xyz::new(3, 2, 2),
+                Xyz::new(3, 3, 2)
             ]
         );
 
@@ -114,31 +114,31 @@ mod test {
         assert_eq!(
             cells,
             vec![
-                Tile::new(0, 0, 1),
-                Tile::new(0, 1, 1),
-                Tile::new(1, 0, 1),
-                Tile::new(1, 1, 1),
-                Tile::new(0, 0, 2),
-                Tile::new(0, 1, 2),
-                Tile::new(0, 2, 2),
-                Tile::new(0, 3, 2),
-                Tile::new(1, 0, 2),
-                Tile::new(1, 1, 2),
-                Tile::new(1, 2, 2),
-                Tile::new(1, 3, 2),
-                Tile::new(2, 0, 2),
-                Tile::new(2, 1, 2),
-                Tile::new(2, 2, 2),
-                Tile::new(2, 3, 2),
-                Tile::new(3, 0, 2),
-                Tile::new(3, 1, 2),
-                Tile::new(3, 2, 2),
-                Tile::new(3, 3, 2)
+                Xyz::new(0, 0, 1),
+                Xyz::new(0, 1, 1),
+                Xyz::new(1, 0, 1),
+                Xyz::new(1, 1, 1),
+                Xyz::new(0, 0, 2),
+                Xyz::new(0, 1, 2),
+                Xyz::new(0, 2, 2),
+                Xyz::new(0, 3, 2),
+                Xyz::new(1, 0, 2),
+                Xyz::new(1, 1, 2),
+                Xyz::new(1, 2, 2),
+                Xyz::new(1, 3, 2),
+                Xyz::new(2, 0, 2),
+                Xyz::new(2, 1, 2),
+                Xyz::new(2, 2, 2),
+                Xyz::new(2, 3, 2),
+                Xyz::new(3, 0, 2),
+                Xyz::new(3, 1, 2),
+                Xyz::new(3, 2, 2),
+                Xyz::new(3, 3, 2)
             ]
         );
 
         let griditer = tms.xyz_iterator(&tms.xy_bbox(), 0, 0);
         let cells = griditer.collect::<Vec<_>>();
-        assert_eq!(cells, vec![Tile::new(0, 0, 0)]);
+        assert_eq!(cells, vec![Xyz::new(0, 0, 0)]);
     }
 }

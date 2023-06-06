@@ -43,7 +43,7 @@ impl Coords {
 
 /// TileMatrixSet X,Y,Z tile indices.
 #[derive(Debug, Clone, PartialEq)]
-pub struct Tile {
+pub struct Xyz {
     /// horizontal index.
     pub x: u64,
     /// verctical index.
@@ -52,7 +52,7 @@ pub struct Tile {
     pub z: u8,
 }
 
-impl Tile {
+impl Xyz {
     /// Create a new Tile.
     pub fn new(x: u64, y: u64, z: u8) -> Self {
         Self { x, y, z }

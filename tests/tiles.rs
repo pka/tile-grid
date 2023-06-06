@@ -87,13 +87,13 @@ fn test_tms_properties() {
 fn test_tile_coordinates() {
     // Test coordinates to tile index utils.
     let tms = tms().lookup("WebMercatorQuad").unwrap();
-    assert_eq!(tms.tile(-179.0, 85.0, 5).unwrap(), Tile::new(0, 0, 5));
+    assert_eq!(tms.tile(-179.0, 85.0, 5).unwrap(), Xyz::new(0, 0, 5));
 
     // Check equivalence between mercantile and morecantile
     // let wlon = 20.0;
     // let wlat = 15.0;
     // assert_eq!(tms.tile(20.0, 15.0, 5), mercantile::tile(20.0, 15.0, 5));
-    assert_eq!(tms.tile(20.0, 15.0, 5).unwrap(), Tile::new(17, 14, 5));
+    assert_eq!(tms.tile(20.0, 15.0, 5).unwrap(), Xyz::new(17, 14, 5));
 }
 
 #[test]
@@ -101,7 +101,7 @@ fn test_bounds() {
     // TileMatrixSet.bounds should return the correct coordinates.
     let expected = [-9.140625, 53.12040528310657, -8.7890625, 53.33087298301705];
     let tms = tms().lookup("WebMercatorQuad").unwrap();
-    let bbox = tms.bounds(&Tile::new(486, 332, 10)).unwrap();
+    let bbox = tms.bounds(&Xyz::new(486, 332, 10)).unwrap();
     for (a, b) in zip(expected, [bbox.left, bbox.bottom, bbox.right, bbox.top]) {
         assert_eq!(round_to_prec(a - b, 7).abs(), 0.0);
     }
@@ -121,7 +121,7 @@ fn test_xy_bounds() {
         7044436.526761846,
     ];
     let tms = tms().lookup("WebMercatorQuad").unwrap();
-    let bounds = tms.xy_bounds(&Tile::new(486, 332, 10));
+    let bounds = tms.xy_bounds(&Xyz::new(486, 332, 10));
     for (a, b) in zip(
         expected,
         [bounds.left, bounds.bottom, bounds.right, bounds.top],
@@ -133,7 +133,7 @@ fn test_xy_bounds() {
 #[test]
 fn test_ul_tile() {
     let tms = tms().lookup("WebMercatorQuad").unwrap();
-    let xy = tms.ul(&Tile::new(486, 332, 10)).unwrap();
+    let xy = tms.ul(&Xyz::new(486, 332, 10)).unwrap();
     let expected = [-9.140625, 53.33087298301705];
     for (a, b) in zip(expected, [xy.x, xy.y]) {
         assert!(a - b < 1e-7);
@@ -149,7 +149,7 @@ fn round_to_prec(number: f64, precision: u8) -> f64 {
 fn test_projul_tile() {
     // TileMatrixSet._ul should return the correct coordinates in input projection.
     let tms = tms().lookup("WebMercatorQuad").unwrap();
-    let xy = tms.xy_ul(&Tile::new(486, 332, 10));
+    let xy = tms.xy_ul(&Xyz::new(486, 332, 10));
     let expected = [-1017529.7205322663, 7044436.526761846];
     for (a, b) in zip(expected, [xy.x, xy.y]) {
         assert_eq!(round_to_prec(a - b, 7).abs(), 0.0);
@@ -199,7 +199,7 @@ fn test_feature() {
 fn test_ul() {
     let tms = tms().lookup("WebMercatorQuad").unwrap();
     let expected = [-9.140625, 53.33087298301705];
-    let lnglat = tms.ul(&Tile::new(486, 332, 10)).unwrap();
+    let lnglat = tms.ul(&Xyz::new(486, 332, 10)).unwrap();
     for (a, b) in zip(expected, [lnglat.x, lnglat.y]) {
         assert_eq!(round_to_prec(a - b, 7), 0.0);
     }
@@ -212,7 +212,7 @@ fn test_bbox() {
     // test bbox.
     let tms = tms().lookup("WebMercatorQuad").unwrap();
     let expected = [-9.140625, 53.12040528310657, -8.7890625, 53.33087298301705];
-    let bbox = tms.bounds(&Tile::new(486, 332, 10)).unwrap();
+    let bbox = tms.bounds(&Xyz::new(486, 332, 10)).unwrap();
     for (a, b) in zip(expected, [bbox.left, bbox.bottom, bbox.right, bbox.top]) {
         assert_eq!(round_to_prec(a - b, 7).abs(), 0.0);
     }
@@ -226,7 +226,7 @@ fn test_bbox() {
 fn test_xy_tile() {
     // x, y for the 486-332-10 tile is correctly calculated.
     let tms = tms().lookup("WebMercatorQuad").unwrap();
-    let ul = tms.ul(&Tile::new(486, 332, 10)).unwrap();
+    let ul = tms.ul(&Xyz::new(486, 332, 10)).unwrap();
     let xy = tms.xy(ul.x, ul.y).unwrap();
     let expected = [-1017529.7205322663, 7044436.526761846];
     for (a, b) in zip(expected, [xy.x, xy.y]) {
@@ -306,38 +306,38 @@ fn test_tiles() {
     let tiles = tms
         .tiles(bounds.0, bounds.1, bounds.2, bounds.3, &vec![14], false)
         .unwrap();
-    let expect = vec![Tile::new(3413, 6202, 14), Tile::new(3413, 6203, 14)];
-    assert_eq!(tiles.collect::<Vec<Tile>>(), expect);
+    let expect = vec![Xyz::new(3413, 6202, 14), Xyz::new(3413, 6203, 14)];
+    assert_eq!(tiles.collect::<Vec<Xyz>>(), expect);
 
     // Single zoom
     let bounds = (-105.0, 39.99, -104.99, 40.0);
     let tiles = tms
         .tiles(bounds.0, bounds.1, bounds.2, bounds.3, &vec![14], false)
         .unwrap();
-    let expect = vec![Tile::new(3413, 6202, 14), Tile::new(3413, 6203, 14)];
-    assert_eq!(tiles.collect::<Vec<Tile>>(), expect);
+    let expect = vec![Xyz::new(3413, 6202, 14), Xyz::new(3413, 6203, 14)];
+    assert_eq!(tiles.collect::<Vec<Xyz>>(), expect);
 
     // Input is truncated
     assert_eq!(
         tms.tiles(-181.0, 0.0, -170.0, 10.0, &vec![2], true)
             .unwrap()
-            .collect::<Vec<Tile>>(),
+            .collect::<Vec<Xyz>>(),
         tms.tiles(-180.0, 0.0, -170.0, 10.0, &vec![2], false)
             .unwrap()
-            .collect::<Vec<Tile>>()
+            .collect::<Vec<Xyz>>()
     );
 
     assert_eq!(
         tms.tiles(-180.0, -90.0, 180.0, 90.0, &vec![0], false)
             .unwrap()
-            .collect::<Vec<Tile>>(),
-        vec![Tile::new(0, 0, 0)]
+            .collect::<Vec<Xyz>>(),
+        vec![Xyz::new(0, 0, 0)]
     );
     assert_eq!(
         tms.tiles(-180.0, -90.0, 180.0, 90.0, &vec![0], false)
             .unwrap()
-            .collect::<Vec<Tile>>(),
-        vec![Tile::new(0, 0, 0)]
+            .collect::<Vec<Xyz>>(),
+        vec![Xyz::new(0, 0, 0)]
     );
 
     // Antimeridian-crossing bounding boxes are handled
@@ -370,8 +370,8 @@ fn test_extend_zoom() {
     // TileMatrixSet.ul should return the correct coordinates.
     let tms = tms().lookup("WebMercatorQuad").unwrap();
 
-    let merc = tms.xy_bounds(&Tile::new(1000, 1000, 25));
-    let more = tms.xy_bounds(&Tile::new(1000, 1000, 25));
+    let merc = tms.xy_bounds(&Xyz::new(1000, 1000, 25));
+    let more = tms.xy_bounds(&Xyz::new(1000, 1000, 25));
     for (a, b) in zip(
         [more.left, more.bottom, more.right, more.top],
         [merc.left, merc.bottom, merc.right, merc.top],
@@ -379,8 +379,8 @@ fn test_extend_zoom() {
         assert_eq!(round_to_prec(a - b, 7), 0.0);
     }
 
-    let merc = tms.xy_bounds(&Tile::new(2000, 2000, 26));
-    let more = tms.xy_bounds(&Tile::new(2000, 2000, 26));
+    let merc = tms.xy_bounds(&Xyz::new(2000, 2000, 26));
+    let more = tms.xy_bounds(&Xyz::new(2000, 2000, 26));
     for (a, b) in zip(
         [more.left, more.bottom, more.right, more.top],
         [merc.left, merc.bottom, merc.right, merc.top],
@@ -388,8 +388,8 @@ fn test_extend_zoom() {
         assert_eq!(round_to_prec(a - b, 7), 0.0);
     }
 
-    let merc = tms.xy_bounds(&Tile::new(2000, 2000, 27));
-    let more = tms.xy_bounds(&Tile::new(2000, 2000, 27));
+    let merc = tms.xy_bounds(&Xyz::new(2000, 2000, 27));
+    let more = tms.xy_bounds(&Xyz::new(2000, 2000, 27));
     for (a, b) in zip(
         [more.left, more.bottom, more.right, more.top],
         [merc.left, merc.bottom, merc.right, merc.top],
@@ -397,8 +397,8 @@ fn test_extend_zoom() {
         assert_eq!(round_to_prec(a - b, 7), 0.0);
     }
 
-    let merc = tms.xy_bounds(&Tile::new(2000, 2000, 30));
-    let more = tms.xy_bounds(&Tile::new(2000, 2000, 30));
+    let merc = tms.xy_bounds(&Xyz::new(2000, 2000, 30));
+    let more = tms.xy_bounds(&Xyz::new(2000, 2000, 30));
     for (a, b) in zip(
         [more.left, more.bottom, more.right, more.top],
         [merc.left, merc.bottom, merc.right, merc.top],
@@ -441,8 +441,8 @@ fn test_extend_zoom() {
 fn test_parent_multi() {
     // test parent
     let tms = tms().lookup("WebMercatorQuad").unwrap();
-    let parent = tms.parent(&Tile::new(486, 332, 10), Some(8)).unwrap();
-    assert_eq!(parent[0], Tile::new(121, 83, 8));
+    let parent = tms.parent(&Xyz::new(486, 332, 10), Some(8)).unwrap();
+    assert_eq!(parent[0], Xyz::new(121, 83, 8));
 }
 
 #[test]
@@ -453,12 +453,12 @@ fn test_children() {
     let x = 243;
     let y = 166;
     let z = 9;
-    let children = tms.children(&Tile::new(x, y, z), None).unwrap();
+    let children = tms.children(&Xyz::new(x, y, z), None).unwrap();
     assert_eq!(children.len(), 4);
-    assert!(children.contains(&Tile::new(2 * x, 2 * y, z + 1)));
-    assert!(children.contains(&Tile::new(2 * x + 1, 2 * y, z + 1)));
-    assert!(children.contains(&Tile::new(2 * x + 1, 2 * y + 1, z + 1)));
-    assert!(children.contains(&Tile::new(2 * x, 2 * y + 1, z + 1)));
+    assert!(children.contains(&Xyz::new(2 * x, 2 * y, z + 1)));
+    assert!(children.contains(&Xyz::new(2 * x + 1, 2 * y, z + 1)));
+    assert!(children.contains(&Xyz::new(2 * x + 1, 2 * y + 1, z + 1)));
+    assert!(children.contains(&Xyz::new(2 * x, 2 * y + 1, z + 1)));
 }
 
 #[test]
@@ -466,25 +466,25 @@ fn test_children_multi() {
     // test children multizoom.
     let tms = tms().lookup("WebMercatorQuad").unwrap();
 
-    let children = tms.children(&Tile::new(243, 166, 9), Some(11)).unwrap();
+    let children = tms.children(&Xyz::new(243, 166, 9), Some(11)).unwrap();
     assert_eq!(children.len(), 16);
     let targets = [
-        Tile::new(972, 664, 11),
-        Tile::new(973, 664, 11),
-        Tile::new(973, 665, 11),
-        Tile::new(972, 665, 11),
-        Tile::new(974, 664, 11),
-        Tile::new(975, 664, 11),
-        Tile::new(975, 665, 11),
-        Tile::new(974, 665, 11),
-        Tile::new(974, 666, 11),
-        Tile::new(975, 666, 11),
-        Tile::new(975, 667, 11),
-        Tile::new(974, 667, 11),
-        Tile::new(972, 666, 11),
-        Tile::new(973, 666, 11),
-        Tile::new(973, 667, 11),
-        Tile::new(972, 667, 11),
+        Xyz::new(972, 664, 11),
+        Xyz::new(973, 664, 11),
+        Xyz::new(973, 665, 11),
+        Xyz::new(972, 665, 11),
+        Xyz::new(974, 664, 11),
+        Xyz::new(975, 664, 11),
+        Xyz::new(975, 665, 11),
+        Xyz::new(974, 665, 11),
+        Xyz::new(974, 666, 11),
+        Xyz::new(975, 666, 11),
+        Xyz::new(975, 667, 11),
+        Xyz::new(974, 667, 11),
+        Xyz::new(972, 666, 11),
+        Xyz::new(973, 666, 11),
+        Xyz::new(973, 667, 11),
+        Xyz::new(972, 667, 11),
     ];
     for target in targets {
         assert!(children.contains(&target));

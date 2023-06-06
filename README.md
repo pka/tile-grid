@@ -16,12 +16,12 @@ Usage
 ### Load tile set matrix and get bounds of a tile
 
 ```rust
-use tile_grid::{tms, BoundingBox, Tile};
+use tile_grid::{tms, BoundingBox, Xyz};
 
 let tms = tms().lookup("WebMercatorQuad").unwrap();
 
 // Get the bounds for tile Z=4, X=10, Y=10 in the input projection
-let bounds = tms.xy_bounds(&Tile::new(10, 10, 4));
+let bounds = tms.xy_bounds(&Xyz::new(10, 10, 4));
 assert_eq!(
     bounds,
     BoundingBox::new(
@@ -33,7 +33,7 @@ assert_eq!(
 );
 
 // Get the bounds for tile Z=4, X=10, Y=10 in LatLon (WGS84)
-let bounds = tms.bounds(&Tile::new(10, 10, 4)).unwrap();
+let bounds = tms.bounds(&Xyz::new(10, 10, 4)).unwrap();
 assert_eq!(
     bounds,
     BoundingBox::new(45.0, -55.77657301866769, 67.5, -40.97989806962013)
@@ -43,16 +43,16 @@ assert_eq!(
 ### Find tile for lat/lon
 
 ```rust
-use tile_grid::{tms, Tile};
+use tile_grid::{tms, Xyz};
 
 let tms = tms().lookup("WebMercatorQuad").unwrap();
 
 let tile = tms.tile(159.31, -42.0, 4).unwrap();
-assert_eq!(tile, Tile::new(15, 10, 4));
+assert_eq!(tile, Xyz::new(15, 10, 4));
 
 // Or using coordinates in input CRS
 let tile = tms.xy_tile(17734308.1, -5160979.4, 4);
-assert_eq!(tile, Tile::new(15, 10, 4));
+assert_eq!(tile, Xyz::new(15, 10, 4));
 ```
 
 Credits

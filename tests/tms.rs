@@ -169,7 +169,7 @@ fn morecantile_examples() {
     let tms = tms().lookup("WebMercatorQuad").unwrap();
 
     // Get the bounds for tile Z=4, X=10, Y=10 in the input projection
-    let bounds = tms.xy_bounds(&Tile::new(10, 10, 4));
+    let bounds = tms.xy_bounds(&Xyz::new(10, 10, 4));
     assert_eq!(
         bounds,
         BoundingBox::new(
@@ -182,7 +182,7 @@ fn morecantile_examples() {
     //>>> BoundingBox(left=5009377.085697308, bottom=-7514065.628545959, right=7514065.628545959, top=-5009377.085697308)
 
     // Get the bounds for tile Z=4, X=10, Y=10 in LatLon (WGS84)
-    let bounds = tms.bounds(&Tile::new(10, 10, 4)).unwrap();
+    let bounds = tms.bounds(&Xyz::new(10, 10, 4)).unwrap();
     assert_eq!(
         bounds,
         BoundingBox::new(45.0, -55.77657301866769, 67.5, -40.97989806962013)
@@ -194,7 +194,7 @@ fn morecantile_examples() {
     //let tms = tms().lookup("WebMercatorQuad").unwrap();
 
     let tile = tms.tile(159.31, -42.0, 4).unwrap();
-    assert_eq!(tile, Tile::new(15, 10, 4));
+    assert_eq!(tile, Xyz::new(15, 10, 4));
 
     // Or using coordinates in input CRS
     let coord = tms.xy(159.31, -42.0).unwrap();
@@ -205,7 +205,7 @@ fn morecantile_examples() {
     }
 
     let tile = tms.xy_tile(17734308.1, -5160979.4, 4);
-    assert_eq!(tile, Tile::new(15, 10, 4));
+    assert_eq!(tile, Xyz::new(15, 10, 4));
 }
 
 #[test]
@@ -1069,13 +1069,13 @@ fn custom_lv95() {
         lv95_json
     );
 
-    let bounds = custom_tms.xy_bounds(&Tile::new(10, 4, 17)); // lake of Zurich
+    let bounds = custom_tms.xy_bounds(&Xyz::new(10, 4, 17)); // lake of Zurich
     assert_eq!(
         bounds,
         BoundingBox::new(2676000.0, 1222000.0, 2701600.0, 1247600.0)
     );
 
-    let bounds = custom_tms.bounds(&Tile::new(10, 4, 17));
+    let bounds = custom_tms.bounds(&Xyz::new(10, 4, 17));
     if cfg!(feature = "projtransform") {
         assert_eq!(
             bounds.unwrap(),

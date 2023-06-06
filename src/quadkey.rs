@@ -1,4 +1,4 @@
-use crate::{tile::Tile, tile_matrix_set::TileMatrix, tms::Tms};
+use crate::{tile::Xyz, tile_matrix_set::TileMatrix, tms::Tms};
 
 /// Check if a number is a power of 2
 fn is_power_of_two(number: u64) -> bool {
@@ -19,7 +19,7 @@ impl Tms {
     ///
     /// # Arguments
     /// * `tile` : instance of Tile
-    pub fn quadkey(&self, tile: Tile) -> String {
+    pub fn quadkey(&self, tile: &Xyz) -> String {
         if !self.is_quadtree {
             panic!("This Tile Matrix Set doesn't support 2 x 2 quadkeys.");
         }
@@ -46,13 +46,13 @@ impl Tms {
     ///
     /// # Arguments
     /// * `qk` - A quadkey string.
-    pub fn quadkey_to_tile(&self, qk: &str) -> Tile {
+    pub fn quadkey_to_tile(&self, qk: &str) -> Xyz {
         if !self.is_quadtree {
             panic!("This Tile Matrix Set doesn't support 2 x 2 quadkeys.");
         }
 
         if qk.len() == 0 {
-            return Tile::new(0, 0, 0);
+            return Xyz::new(0, 0, 0);
         }
 
         let mut xtile = 0;
@@ -73,6 +73,6 @@ impl Tms {
             }
         }
 
-        Tile::new(xtile, ytile, z + 1)
+        Xyz::new(xtile, ytile, z + 1)
     }
 }

@@ -1,6 +1,6 @@
 use crate::common::Crs;
 use crate::quadkey::check_quadkey_support;
-use crate::tile::{BoundingBox, Coords, Tile};
+use crate::tile::{BoundingBox, Coords, Xyz};
 use crate::tile_matrix_set::{ordered_axes_inverted, TileMatrix, TileMatrixSet};
 use crate::tms_iterator::XyzIterator;
 use crate::transform::{merc_tile_ul, Error::TransformationUnsupported, Transform, Transformer};
@@ -480,7 +480,7 @@ impl Tms {
     /// # Arguments
     /// * `xcoord`, ycoord - A `X` and `Y` pair in TMS coordinate reference system.
     /// * `zoom` - The zoom level.
-    pub fn xy_tile(&self, xcoord: f64, ycoord: f64, zoom: u8) -> Tile {
+    pub fn xy_tile(&self, xcoord: f64, ycoord: f64, zoom: u8) -> Xyz {
         let m = self.matrix(zoom);
         let matrix = m.as_ref();
         let res = self.resolution(matrix);
@@ -524,7 +524,7 @@ impl Tms {
             ytile
         };
 
-        Tile::new(xtile, ytile, zoom)
+        Xyz::new(xtile, ytile, zoom)
     }
 
     /// Get the tile for a given geographic longitude and latitude pair.
@@ -532,7 +532,7 @@ impl Tms {
     /// # Arguments
     /// * `lng`, `lat` : A longitude and latitude pair in geographic coordinate reference system.
     /// * `zoom` : The zoom level.
-    pub fn tile(&self, lng: f64, lat: f64, zoom: u8) -> Result<Tile> {
+    pub fn tile(&self, lng: f64, lat: f64, zoom: u8) -> Result<Xyz> {
         let xy = self.xy(lng, lat)?;
         Ok(self.xy_tile(xy.x, xy.y, zoom))
     }
@@ -542,7 +542,7 @@ impl Tms {
     /// # Arguments
     /// * `lng`, `lat` : A longitude and latitude pair in geographic coordinate reference system.
     /// * `zoom` : The zoom level.
-    pub fn tile_truncated(&self, lng: f64, lat: f64, zoom: u8) -> Result<Tile> {
+    pub fn tile_truncated(&self, lng: f64, lat: f64, zoom: u8) -> Result<Xyz> {
         let xy = self.xy_truncated(lng, lat)?;
         Ok(self.xy_tile(xy.x, xy.y, zoom))
     }
@@ -551,7 +551,7 @@ impl Tms {
     ///
     /// # Arguments
     /// * `tile`: (x, y, z) tile coordinates or a Tile object we want the upper left coordinates of.
-    pub fn xy_ul(&self, tile: &Tile) -> Coords {
+    pub fn xy_ul(&self, tile: &Xyz) -> Coords {
         let m = self.matrix(tile.z);
         let matrix = m.as_ref();
         let res = self.resolution(matrix);
@@ -576,9 +576,9 @@ impl Tms {
     ///
     /// # Arguments
     /// * `tile`: Tile object we want the bounding box of.
-    pub fn xy_bounds(&self, tile: &Tile) -> BoundingBox {
+    pub fn xy_bounds(&self, tile: &Xyz) -> BoundingBox {
         let top_left = self.xy_ul(tile);
-        let bottom_right = self.xy_ul(&Tile::new(tile.x + 1, tile.y + 1, tile.z));
+        let bottom_right = self.xy_ul(&Xyz::new(tile.x + 1, tile.y + 1, tile.z));
         BoundingBox::new(top_left.x, bottom_right.y, bottom_right.x, top_left.y)
     }
 
@@ -586,7 +586,7 @@ impl Tms {
     ///
     /// # Arguments
     /// * `tile` - (x, y, z) tile coordinates or a Tile object we want the upper left geographic coordinates of.
-    pub fn ul(&self, tile: &Tile) -> Result<Coords> {
+    pub fn ul(&self, tile: &Xyz) -> Result<Coords> {
         let coords = if self.data_crs.as_srid() == 3857 && self.geographic_crs.as_srid() == 4326 {
             let (lon, lat) = merc_tile_ul(tile.x as u32, tile.y as u32, tile.z);
             Coords::new(lon, lat)
@@ -601,9 +601,9 @@ impl Tms {
     ///
     /// # Arguments
     /// * `tile` - Tile object we want the bounding box of.
-    pub fn bounds(&self, tile: &Tile) -> Result<BoundingBox> {
+    pub fn bounds(&self, tile: &Xyz) -> Result<BoundingBox> {
         let top_left = self.ul(tile)?;
-        let bottom_right = self.ul(&Tile::new(tile.x + 1, tile.y + 1, tile.z))?;
+        let bottom_right = self.ul(&Xyz::new(tile.x + 1, tile.y + 1, tile.z))?;
         Ok(BoundingBox::new(
             top_left.x,
             bottom_right.y,
@@ -644,8 +644,8 @@ impl Tms {
             let zoom = self.minzoom();
             let m = self.matrix(zoom);
             let matrix = m.as_ref();
-            let top_left = self.xy_ul(&Tile::new(0, 0, zoom));
-            let bottom_right = self.xy_ul(&Tile::new(
+            let top_left = self.xy_ul(&Xyz::new(0, 0, zoom));
+            let bottom_right = self.xy_ul(&Xyz::new(
                 u64::from(matrix.matrix_width),
                 u64::from(matrix.matrix_height),
                 zoom,
@@ -704,8 +704,8 @@ impl Tms {
         north: f64,
         zooms: &[u8],
         truncate: bool, /* = False */
-    ) -> Result<impl Iterator<Item = Tile>> {
-        let mut tiles: Vec<Tile> = Vec::new();
+    ) -> Result<impl Iterator<Item = Xyz>> {
+        let mut tiles: Vec<Xyz> = Vec::new();
         let bbox = self.bbox()?;
         let bboxes = if west > east {
             vec![
@@ -730,7 +730,7 @@ impl Tms {
                 let lr_tile = get_tile(self, e - LL_EPSILON, s + LL_EPSILON, *z)?;
                 for i in ul_tile.x..=lr_tile.x {
                     for j in ul_tile.y..=lr_tile.y {
-                        tiles.push(Tile::new(i, j, *z));
+                        tiles.push(Xyz::new(i, j, *z));
                     }
                 }
             }
@@ -919,7 +919,7 @@ impl Tms {
     }
 
     /// Check if a tile is valid.
-    pub fn is_valid(&self, tile: &Tile) -> bool {
+    pub fn is_valid(&self, tile: &Xyz) -> bool {
         if tile.z < self.minzoom() {
             return false;
         }
@@ -941,7 +941,7 @@ impl Tms {
     ///
     /// # Arguments
     /// * `tile` - instance of Tile
-    pub fn neighbors(&self, tile: &Tile) -> Vec<Tile> {
+    pub fn neighbors(&self, tile: &Xyz) -> Vec<Xyz> {
         let extrema = self.minmax(tile.z);
 
         let mut tiles = Vec::new();
@@ -955,7 +955,7 @@ impl Tms {
                     continue;
                 }
 
-                tiles.push(Tile::new(x, y, tile.z));
+                tiles.push(Xyz::new(x, y, tile.z));
             }
         }
 
@@ -971,7 +971,7 @@ impl Tms {
     /// * `tile` - instance of Tile
     /// * `zoom` - Determines the *zoom* level of the returned parent tile.
     ///     This defaults to one lower than the tile (the immediate parent).
-    pub fn parent(&self, tile: &Tile, zoom: Option<u8> /*  = None */) -> Result<Vec<Tile>> {
+    pub fn parent(&self, tile: &Xyz, zoom: Option<u8> /*  = None */) -> Result<Vec<Xyz>> {
         if tile.z == self.minzoom() {
             return Ok(vec![]);
         }
@@ -999,7 +999,7 @@ impl Tms {
         let mut tiles = Vec::new();
         for i in ul_tile.x..=lr_tile.x {
             for j in ul_tile.y..=lr_tile.y {
-                tiles.push(Tile::new(i, j, target_zoom));
+                tiles.push(Xyz::new(i, j, target_zoom));
             }
         }
 
@@ -1014,7 +1014,7 @@ impl Tms {
     /// * `tile` - instance of Tile
     /// * `zoom` - Determines the *zoom* level of the returned parent tile.
     ///     This defaults to one lower than the tile (the immediate parent).
-    pub fn children(&self, tile: &Tile, zoom: Option<u8>) -> Result<Vec<Tile>> {
+    pub fn children(&self, tile: &Xyz, zoom: Option<u8>) -> Result<Vec<Xyz>> {
         let mut tiles = Vec::new();
 
         if let Some(zoom) = zoom {
@@ -1037,7 +1037,7 @@ impl Tms {
 
         for i in ul_tile.x..=lr_tile.x {
             for j in ul_tile.y..=lr_tile.y {
-                tiles.push(Tile::new(i, j, target_zoom));
+                tiles.push(Xyz::new(i, j, target_zoom));
             }
         }
 
