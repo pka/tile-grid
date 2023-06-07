@@ -1,4 +1,4 @@
-## 0.5.0 (UNRELEASED)
+## 0.5.0
 
 * Rename `Tile` to `Xyz`
 * Only return errors for unsupported transformations when
