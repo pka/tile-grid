@@ -1,3 +1,7 @@
+## 0.5.1
+
+* Make tileset structs and enums public
+
 ## 0.5.0
 
 * Rename `Tile` to `Xyz`
