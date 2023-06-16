@@ -1,3 +1,7 @@
+## 0.5.2
+
+* Deserialize Crs in TileSet structs with DisplayFromStr
+
 ## 0.5.1
 
 * Make tileset structs and enums public
