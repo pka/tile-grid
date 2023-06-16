@@ -55,6 +55,7 @@ pub struct TileSet {
     /// limited and the rest not available at all
     pub tile_matrix_set_limits: Option<Vec<TileMatrixLimits>>,
     /// Coordinate Reference System (CRS)
+    #[serde_as(as = "DisplayFromStr")]
     pub crs: Crs,
     /// Epoch of the Coordinate Reference System (CRS)
     pub epoch: Option<f64>,
@@ -113,6 +114,7 @@ pub struct GeospatialData {
     /// Category where the layer can be grouped
     pub theme: Option<String>,
     /// Coordinate Reference System (CRS)
+    #[serde_as(as = "Option<DisplayFromStr>")]
     pub crs: Option<Crs>,
     /// Epoch of the Coordinate Reference System (CRS)
     pub epoch: Option<f64>,
@@ -155,6 +157,7 @@ pub struct GeospatialData {
 pub struct TilePoint {
     pub coordinates: Option<Point2D>,
     // Coordinate Reference System (CRS) of the coordinates
+    #[serde_as(as = "Option<DisplayFromStr>")]
     pub crs: Option<Crs>,
     /// TileMatrix identifier associated with the scaleDenominator
     pub tile_matrix: Option<String>,
