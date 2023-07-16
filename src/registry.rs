@@ -1,5 +1,6 @@
-use crate::tile_matrix_set::TileMatrixSet;
+use crate::tile_matrix_set::TileMatrixSetOps;
 use crate::tms::Tms;
+use ogcapi_types::tiles::TileMatrixSet;
 use once_cell::sync::OnceCell;
 use std::collections::HashMap;
 
@@ -41,7 +42,7 @@ impl TileMatrixSets {
     }
 
     pub fn lookup(&self, id: &str) -> Result<Tms, RegistryError> {
-        self.get(id)?.into_tms().map_err(Into::into)
+        self.get(id)?.try_into().map_err(Into::into)
     }
 
     pub fn list(&self) -> impl Iterator<Item = &String> {

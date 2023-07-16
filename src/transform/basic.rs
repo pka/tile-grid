@@ -1,5 +1,5 @@
 use crate::transform::{Error, Result, Transform};
-use crate::Crs;
+use ogcapi_types::common::Crs;
 use std::f64::consts;
 
 #[derive(Clone, Debug)]

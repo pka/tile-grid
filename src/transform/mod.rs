@@ -2,9 +2,9 @@ mod basic;
 #[cfg(feature = "projtransform")]
 mod proj;
 
-use crate::Crs;
 pub use basic::*;
 use core::fmt::Debug;
+use ogcapi_types::common::Crs;
 
 #[cfg(feature = "projtransform")]
 pub type Transformer = crate::transform::proj::ProjTransformer;

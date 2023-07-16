@@ -1,10 +1,12 @@
-use crate::common::Crs;
 use crate::quadkey::check_quadkey_support;
 use crate::tile::{BoundingBox, Coords, Xyz};
-use crate::tile_matrix_set::{ordered_axes_inverted, TileMatrix, TileMatrixSet};
+use crate::tile_matrix_set::{ordered_axes_inverted, TileMatrixSetOps};
 use crate::tms_iterator::XyzIterator;
 use crate::transform::{merc_tile_ul, Error::TransformationUnsupported, Transform, Transformer};
-use crate::{BoundingBox2D, CornerOfOrigin, OrderedAxes, TitleDescriptionKeywords};
+use ogcapi_types::common::Crs;
+use ogcapi_types::tiles::{
+    BoundingBox2D, CornerOfOrigin, OrderedAxes, TileMatrix, TileMatrixSet, TitleDescriptionKeywords,
+};
 use std::convert::AsRef;
 use std::f64::consts::PI;
 use std::num::{NonZeroU16, NonZeroU64};
@@ -1067,9 +1069,10 @@ pub(crate) struct MinMax {
     pub y_max: u64,
 }
 
-impl TileMatrixSet {
-    pub fn into_tms(&self) -> Result<Tms> {
-        Tms::init(self)
+impl TryFrom<&TileMatrixSet> for Tms {
+    type Error = TmsError;
+    fn try_from(tms: &TileMatrixSet) -> Result<Tms> {
+        Tms::init(tms)
     }
 }
 

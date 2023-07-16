@@ -1,5 +1,5 @@
 use crate::transform::{Error, Result, Transform};
-use crate::Crs;
+use ogcapi_types::common::Crs;
 use proj::Proj;
 
 pub type ProjTransformer = Proj;

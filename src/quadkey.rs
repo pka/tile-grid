@@ -1,4 +1,5 @@
-use crate::{tile::Xyz, tile_matrix_set::TileMatrix, tms::Tms};
+use crate::{tile::Xyz, tms::Tms};
+use ogcapi_types::tiles::TileMatrix;
 
 /// Check if a number is a power of 2
 fn is_power_of_two(number: u64) -> bool {
