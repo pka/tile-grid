@@ -46,7 +46,7 @@ impl Coords {
 pub struct Xyz {
     /// horizontal index.
     pub x: u64,
-    /// verctical index.
+    /// vertical index.
     pub y: u64,
     /// zoom level.
     pub z: u8,

@@ -1,5 +1,6 @@
-use crate::{Authority::EPSG, Crs};
 use core::num::{NonZeroU16, NonZeroU64};
+use ogcapi_types::common::{Authority::EPSG, Crs};
+use ogcapi_types::tiles::{TileMatrix, TileMatrixSet, TitleDescriptionKeywords};
 use std::path::{Path, PathBuf};
 use tile_grid::*;
 
@@ -23,7 +24,11 @@ fn test_tile_matrix_set() {
     for tileset in tilesets {
         // let ts = TileMatrixSet::parse_file(tilesets).unwrap();
         let data = std::fs::read_to_string(tileset).unwrap();
-        let tms = TileMatrixSet::from_json(&data).unwrap().into_tms().unwrap();
+        let tms: Tms = TileMatrixSet::from_json(&data)
+            .as_ref()
+            .unwrap()
+            .try_into()
+            .unwrap();
         // This would fail if `supportedCRS` isn't supported by PROJ
         assert!(tms.crs().as_known_crs().len() > 0);
     }
