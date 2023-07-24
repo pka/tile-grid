@@ -17,7 +17,7 @@ projtransform = ["proj"]
 [dependencies]
 chrono = { version = "0.4.24", features = ["serde"] }
 once_cell = "1.17.1"
-proj = { version = "0.27.0", default-features = false, optional = true }
+proj = { version = "=0.27.0", default-features = false, optional = true }
 serde = { version = "1.0.160", features = ["derive"] }
 serde_json = "1.0.96"
 serde_repr = "0.1.12"
