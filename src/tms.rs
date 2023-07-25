@@ -364,8 +364,13 @@ impl Tms {
     // From note g in <http://docs.opengeospatial.org/is/17-083r2/17-083r2.html#table_2>:
     //   The pixel size of the tile can be obtained from the scaleDenominator
     //   by multiplying the later by 0.28 10-3 / metersPerUnit.
-    fn resolution(&self, matrix: &TileMatrix) -> f64 {
+    pub fn resolution(&self, matrix: &TileMatrix) -> f64 {
         matrix.scale_denominator * 0.28e-3 / meters_per_unit(self.crs()) as f64
+    }
+
+    /// Tile resolution for a specific zoom.
+    pub fn resolution_z(&self, zoom: u8) -> Option<f64> {
+        self.matrix_z(zoom).map(|m| self.resolution(&m))
     }
 
     /// Get TMS zoom level corresponding to a specific resolution.
