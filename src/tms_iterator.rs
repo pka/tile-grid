@@ -20,29 +20,33 @@ pub struct XyzIterator {
 
 impl XyzIterator {
     pub(crate) fn new(z_min: u8, z_max: u8, limits: Vec<MinMax>) -> XyzIterator {
+        // "Empty" iterator for invalid parameters
+        const EMPTY_ITER: XyzIterator = XyzIterator {
+            z: 0,
+            x: 0,
+            y: 0,
+            z_min: 0,
+            z_max: 0,
+            limits: Vec::new(),
+            finished: true,
+        };
         if z_min <= z_max {
-            let limit = &limits[z_min as usize];
-            let z_max = std::cmp::min(z_max, z_min + limits.len().saturating_sub(1) as u8);
-            XyzIterator {
-                z: z_min,
-                x: limit.x_min,
-                y: limit.y_min,
-                z_min,
-                z_max,
-                limits,
-                finished: false,
+            if let Some(limit) = &limits.first() {
+                let z_max = std::cmp::min(z_max, z_min + limits.len().saturating_sub(1) as u8);
+                XyzIterator {
+                    z: z_min,
+                    x: limit.x_min,
+                    y: limit.y_min,
+                    z_min,
+                    z_max,
+                    limits,
+                    finished: false,
+                }
+            } else {
+                EMPTY_ITER
             }
         } else {
-            // Return "empty" iterator for invalid parameters
-            XyzIterator {
-                z: 0,
-                x: 0,
-                y: 0,
-                z_min: 0,
-                z_max: 0,
-                limits: Vec::new(),
-                finished: true,
-            }
+            EMPTY_ITER
         }
     }
 }
@@ -140,5 +144,18 @@ mod test {
         let griditer = tms.xyz_iterator(&tms.xy_bbox(), 0, 0);
         let cells = griditer.collect::<Vec<_>>();
         assert_eq!(cells, vec![Xyz::new(0, 0, 0)]);
+    }
+
+    #[test]
+    fn invalid_iters() {
+        let tms = tms().lookup("WebMercatorQuad").unwrap();
+
+        let griditer = tms.xyz_iterator(&tms.xy_bbox(), 3, 2);
+        assert_eq!(griditer.count(), 0);
+
+        // z_min >= (z_max - z_min)
+        // Did panic in earlier versions
+        let griditer = tms.xyz_iterator(&tms.xy_bbox(), 2, 3);
+        assert_eq!(griditer.count(), 80);
     }
 }
