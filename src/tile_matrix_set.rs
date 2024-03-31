@@ -107,17 +107,12 @@ pub struct VariableMatrixWidth {
     pub smax_tile_row: u64,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Default, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub enum CornerOfOrigin {
+    #[default]
     TopLeft,
     BottomLeft,
-}
-
-impl Default for CornerOfOrigin {
-    fn default() -> Self {
-        CornerOfOrigin::TopLeft
-    }
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -135,12 +130,12 @@ impl TileMatrixSet {
         TileMatrixSet::from_json(&content)
     }
     pub fn from_json(json: &str) -> Result<Self, TileMatrixSetError> {
-        serde_json::from_str(&json).map_err(Into::into)
+        serde_json::from_str(json).map_err(Into::into)
     }
     /// Check if CRS has inverted AXIS (lat,lon) instead of (lon,lat).
     pub(crate) fn crs_axis_inverted(&self) -> bool {
         if let Some(axes) = &self.ordered_axes {
-            ordered_axes_inverted(&axes)
+            ordered_axes_inverted(axes)
         } else {
             false // TODO: Check CRS axis ordering
         }

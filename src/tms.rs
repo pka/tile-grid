@@ -62,7 +62,7 @@ pub enum Matrix<'a> {
 impl AsRef<TileMatrix> for Matrix<'_> {
     fn as_ref(&self) -> &TileMatrix {
         match self {
-            Matrix::Predefined(m) => *m,
+            Matrix::Predefined(m) => m,
             Matrix::Calculated(m) => m,
         }
     }
@@ -163,6 +163,7 @@ impl Tms {
     /// * `id` - Tile Matrix Set identifier (default is 'Custom')
     /// * `ordered_axes`
     /// * `geographic_crs` - Geographic (lat,lon) coordinate reference system (default is EPSG:4326)
+    #[allow(clippy::too_many_arguments)]
     pub fn custom(
         extent: Vec<f64>,
         crs: &Crs,
@@ -208,6 +209,7 @@ impl Tms {
     }
 
     /// Construct a custom TileMatrixSet with given resolutions
+    #[allow(clippy::too_many_arguments)]
     pub fn custom_resolutions(
         extent: Vec<f64>,
         crs: &Crs,
@@ -280,7 +282,7 @@ impl Tms {
                     keywords: None,
                 },
                 id: zoom.to_string(),
-                scale_denominator: res * mpu as f64 / 0.00028,
+                scale_denominator: res * mpu / 0.00028,
                 cell_size: *res,
                 corner_of_origin: corner_of_origin.clone(),
                 point_of_origin: [x_origin, y_origin],
@@ -299,12 +301,10 @@ impl Tms {
 
     /// Return the TileMatrix for a specific zoom without automatic tile matrix extension.
     pub fn matrix_z(&self, zoom: u8) -> Option<&TileMatrix> {
-        for m in &self.tms.tile_matrices {
-            if m.id == zoom.to_string() {
-                return Some(m);
-            }
-        }
-        None
+        self.tms
+            .tile_matrices
+            .iter()
+            .find(|&m| m.id == zoom.to_string())
     }
 
     /// Return the TileMatrix for a specific zoom.
@@ -365,12 +365,12 @@ impl Tms {
     //   The pixel size of the tile can be obtained from the scaleDenominator
     //   by multiplying the later by 0.28 10-3 / metersPerUnit.
     pub fn resolution(&self, matrix: &TileMatrix) -> f64 {
-        matrix.scale_denominator * 0.28e-3 / meters_per_unit(self.crs()) as f64
+        matrix.scale_denominator * 0.28e-3 / meters_per_unit(self.crs())
     }
 
     /// Tile resolution for a specific zoom.
     pub fn resolution_z(&self, zoom: u8) -> Option<f64> {
-        self.matrix_z(zoom).map(|m| self.resolution(&m))
+        self.matrix_z(zoom).map(|m| self.resolution(m))
     }
 
     /// Get TMS zoom level corresponding to a specific resolution.
@@ -428,7 +428,7 @@ impl Tms {
     /// Transform point(x,y) to geographic longitude and latitude.
     fn lnglat(&self, x: f64, y: f64, truncate: bool /* =False */) -> Result<Coords> {
         let Some(transformer) = &self.to_geographic else {
-            return Err(self.transform_error_to_geographic())
+            return Err(self.transform_error_to_geographic());
         };
         point_in_bbox(Coords::new(x, y), self.xy_bbox(), DEFAULT_BBOX_PREC)?;
         let (mut lng, mut lat) = transformer.transform(x, y)?;
@@ -443,7 +443,7 @@ impl Tms {
     /// Transform geographic longitude and latitude coordinates to TMS CRS
     pub fn xy(&self, lng: f64, lat: f64) -> Result<Coords> {
         let Some(transformer) = &self.from_geographic else {
-            return Err(self.transform_error_from_geographic())
+            return Err(self.transform_error_from_geographic());
         };
         point_in_bbox(Coords::new(lng, lat), self.xy_bbox(), DEFAULT_BBOX_PREC)?;
 
@@ -634,7 +634,7 @@ impl Tms {
                 if crs != self.crs() {
                     // Verified in init function
                     let transform =
-                        Transformer::from_crs(crs, &self.crs(), true).expect("Transformer");
+                        Transformer::from_crs(crs, self.crs(), true).expect("Transformer");
                     let (left, bottom, right, top) = transform
                         .transform_bounds(*left, *bottom, *right, *top /* , Some(21) */)
                         .expect("Transformer");
@@ -668,7 +668,7 @@ impl Tms {
     /// Return TMS bounding box in geographic coordinate reference system.
     pub fn bbox(&self) -> Result<BoundingBox> {
         let Some(transformer) = &self.to_geographic else {
-            return Err(self.transform_error_to_geographic())
+            return Err(self.transform_error_to_geographic());
         };
         let xy_bbox = self.xy_bbox();
         let bbox = transformer.transform_bounds(
@@ -952,11 +952,12 @@ impl Tms {
         let mut tiles = Vec::new();
         for x in tile.x.saturating_sub(1)..=tile.x.saturating_add(1) {
             for y in tile.y.saturating_sub(1)..=tile.y.saturating_add(1) {
-                if x == tile.x && y == tile.y {
-                    continue;
-                } else if x < extrema.x_min || y < extrema.y_min {
-                    continue;
-                } else if x > extrema.x_max || y > extrema.y_max {
+                if x == tile.x && y == tile.y
+                    || x < extrema.x_min
+                    || y < extrema.y_min
+                    || x > extrema.x_max
+                    || y > extrema.y_max
+                {
                     continue;
                 }
 
@@ -1068,11 +1069,11 @@ pub(crate) struct MinMax {
 
 impl TileMatrixSet {
     pub fn into_tms(&self) -> Result<Tms> {
-        Tms::init(&self)
+        Tms::init(self)
     }
 }
 
-fn transformed_bbox(extent: &Vec<f64>, crs: &Crs, extent_crs: Option<&Crs>) -> Result<BoundingBox> {
+fn transformed_bbox(extent: &[f64], crs: &Crs, extent_crs: Option<&Crs>) -> Result<BoundingBox> {
     let (mut left, mut bottom, mut right, mut top) = (extent[0], extent[1], extent[2], extent[3]);
     if let Some(extent_crs) = extent_crs {
         if extent_crs != crs {

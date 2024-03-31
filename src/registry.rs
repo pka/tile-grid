@@ -21,6 +21,12 @@ pub enum RegistryError {
     TmsError(#[from] crate::tms::TmsError),
 }
 
+impl Default for TileMatrixSets {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TileMatrixSets {
     pub fn new() -> Self {
         Self {
@@ -39,7 +45,7 @@ impl TileMatrixSets {
     }
 
     pub fn list(&self) -> impl Iterator<Item = &String> {
-        self.coll.keys().into_iter()
+        self.coll.keys()
     }
 
     pub fn register(
@@ -65,7 +71,7 @@ impl TileMatrixSets {
 /// Global registry of tile matrix sets
 pub fn tms() -> &'static TileMatrixSets {
     static TMS: OnceCell<TileMatrixSets> = OnceCell::new();
-    &TMS.get_or_init(|| {
+    TMS.get_or_init(|| {
         let mut sets = TileMatrixSets::new();
         let tms = vec![
             #[cfg(feature = "projtransform")]
@@ -86,7 +92,7 @@ pub fn tms() -> &'static TileMatrixSets {
             include_str!("../data/WorldMercatorWGS84Quad.json"),
         ]
         .into_iter()
-        .map(|data| TileMatrixSet::from_json(&data).unwrap())
+        .map(|data| TileMatrixSet::from_json(data).unwrap())
         .collect::<Vec<_>>();
         sets.register(tms, false).unwrap();
         // user_tms_dir = os.environ.get("TILEMATRIXSET_DIRECTORY", None)
