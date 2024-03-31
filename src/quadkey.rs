@@ -6,7 +6,7 @@ fn is_power_of_two(number: u64) -> bool {
 }
 
 /// Check if a Tile Matrix Set supports quadkeys
-pub(crate) fn check_quadkey_support(tms: &Vec<TileMatrix>) -> bool {
+pub(crate) fn check_quadkey_support(tms: &[TileMatrix]) -> bool {
     tms.iter().enumerate().take(tms.len() - 1).all(|(i, t)| {
         t.matrix_width == t.matrix_height
             && is_power_of_two(t.matrix_width.into())
@@ -51,7 +51,7 @@ impl Tms {
             panic!("This Tile Matrix Set doesn't support 2 x 2 quadkeys.");
         }
 
-        if qk.len() == 0 {
+        if qk.is_empty() {
             return Xyz::new(0, 0, 0);
         }
 
@@ -62,12 +62,12 @@ impl Tms {
             z = i as u8;
             let mask = 1 << i;
             if digit == '1' {
-                xtile = xtile | mask;
+                xtile |= mask;
             } else if digit == '2' {
-                ytile = ytile | mask;
+                ytile |= mask;
             } else if digit == '3' {
-                xtile = xtile | mask;
-                ytile = ytile | mask;
+                xtile |= mask;
+                ytile |= mask;
             } else if digit != '0' {
                 panic!("Unexpected quadkey digit: {}", digit);
             }

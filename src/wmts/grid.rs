@@ -113,6 +113,7 @@ impl Grid {
     }
 
     /// Web Mercator grid (Google maps compatible)
+    #[allow(clippy::excessive_precision)]
     pub fn web_mercator() -> Grid {
         Grid::new(
             256,
@@ -223,8 +224,8 @@ impl Grid {
     pub fn ytile_from_xyz(&self, ytile: u32, zoom: u8) -> u32 {
         // y = maxy-ytile-1
         let maxy = self.level_max[zoom as usize].1;
-        let y = maxy.saturating_sub(ytile).saturating_sub(1);
-        y
+
+        maxy.saturating_sub(ytile).saturating_sub(1)
     }
     /// Extent of a given tile in XYZ adressing scheme
     pub fn tile_extent_xyz(&self, xtile: u32, ytile: u32, zoom: u8) -> Extent {
