@@ -119,16 +119,16 @@ impl Grid {
             256,
             256,
             Extent {
-                minx: -20037508.3427892480,
-                miny: -20037508.3427892480,
-                maxx: 20037508.3427892480,
-                maxy: 20037508.3427892480,
+                minx: -20_037_508.342_789_248,
+                miny: -20_037_508.342_789_248,
+                maxx: 20_037_508.342_789_248,
+                maxy: 20_037_508.342_789_248,
             },
             3857,
             Unit::Meters,
             // for calculation see fn test_resolutions
             vec![
-                156543.0339280410,
+                156_543.033_928_041,
                 78271.5169640205,
                 39135.75848201025,
                 19567.879241005125,
@@ -224,7 +224,6 @@ impl Grid {
     pub fn ytile_from_xyz(&self, ytile: u32, zoom: u8) -> u32 {
         // y = maxy-ytile-1
         let maxy = self.level_max[zoom as usize].1;
-
         maxy.saturating_sub(ytile).saturating_sub(1)
     }
     /// Extent of a given tile in XYZ adressing scheme
