@@ -1,3 +1,9 @@
+## 0.6.0
+
+* Use structs from ogcapi-types
+* Make tile resolution function public
+* Fix iterator panic when z_min >= z_max - z_min
+
 ## 0.5.2
 
 * Deserialize Crs in TileSet structs with DisplayFromStr

@@ -1,6 +1,6 @@
 [package]
 name = "tile-grid"
-version = "0.5.2"
+version = "0.6.0"
 authors = ["Pirmin Kalberer <pka@sourcepole.com>"]
 edition = "2021"
 rust-version = "1.65"
