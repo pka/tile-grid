@@ -6,7 +6,9 @@ pub type ProjTransformer = Proj;
 
 impl Transform for Proj {
     fn from_crs(from: &Crs, to: &Crs, _always_xy: bool) -> Result<Self> {
-        Proj::new_known_crs(&from.as_known_crs(), &to.as_known_crs(), None)
+        let from_crs = format!("{}:{}", from.authority, from.code);
+        let to_crs = format!("{}:{}", to.authority, to.code);
+        Proj::new_known_crs(&from_crs, &to_crs, None)
             .map_err(|_e| Error::TransformationUnsupported(from.clone(), to.clone()))
     }
     fn transform(&self, x: f64, y: f64) -> Result<(f64, f64)> {

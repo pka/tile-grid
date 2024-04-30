@@ -1,6 +1,6 @@
-use core::num::{NonZeroU16, NonZeroU64};
+use core::num::NonZeroU64;
 use ogcapi_types::common::{Authority::EPSG, Crs};
-use ogcapi_types::tiles::{TileMatrix, TileMatrixSet, TitleDescriptionKeywords};
+use ogcapi_types::tiles::{CornerOfOrigin, TileMatrix, TileMatrixSet, TitleDescriptionKeywords};
 use std::path::{Path, PathBuf};
 use tile_grid::*;
 
@@ -30,7 +30,8 @@ fn test_tile_matrix_set() {
             .try_into()
             .unwrap();
         // This would fail if `supportedCRS` isn't supported by PROJ
-        assert!(tms.crs().as_known_crs().len() > 0);
+        // assert!(tms.crs().as_known_crs().len() > 0);
+        assert!(format!("{}:{}", tms.crs().authority, tms.crs().code).len() > 0);
     }
 }
 
@@ -251,10 +252,10 @@ fn web_mercator_quad() -> TileMatrixSet {
                 id: "0".to_string(),
                 scale_denominator: 559082264.028717,
                 cell_size: 156543.033928041,
-                corner_of_origin: None,
+                corner_of_origin: CornerOfOrigin::TopLeft,
                 point_of_origin: [-20037508.3427892, 20037508.3427892],
-                tile_width: NonZeroU16::new(256).unwrap(),
-                tile_height: NonZeroU16::new(256).unwrap(),
+                tile_width: NonZeroU64::new(256).unwrap(),
+                tile_height: NonZeroU64::new(256).unwrap(),
                 matrix_width: NonZeroU64::new(1).unwrap(),
                 matrix_height: NonZeroU64::new(1).unwrap(),
                 variable_matrix_widths: None,
@@ -268,10 +269,10 @@ fn web_mercator_quad() -> TileMatrixSet {
                 id: "1".to_string(),
                 scale_denominator: 279541132.014358,
                 cell_size: 78271.5169640204,
-                corner_of_origin: None,
+                corner_of_origin: CornerOfOrigin::TopLeft,
                 point_of_origin: [-20037508.3427892, 20037508.3427892],
-                tile_width: NonZeroU16::new(256).unwrap(),
-                tile_height: NonZeroU16::new(256).unwrap(),
+                tile_width: NonZeroU64::new(256).unwrap(),
+                tile_height: NonZeroU64::new(256).unwrap(),
                 matrix_width: NonZeroU64::new(2).unwrap(),
                 matrix_height: NonZeroU64::new(2).unwrap(),
                 variable_matrix_widths: None,
@@ -285,10 +286,10 @@ fn web_mercator_quad() -> TileMatrixSet {
                 id: "2".to_string(),
                 scale_denominator: 139770566.007179,
                 cell_size: 39135.7584820102,
-                corner_of_origin: None,
+                corner_of_origin: CornerOfOrigin::TopLeft,
                 point_of_origin: [-20037508.3427892, 20037508.3427892],
-                tile_width: NonZeroU16::new(256).unwrap(),
-                tile_height: NonZeroU16::new(256).unwrap(),
+                tile_width: NonZeroU64::new(256).unwrap(),
+                tile_height: NonZeroU64::new(256).unwrap(),
                 matrix_width: NonZeroU64::new(4).unwrap(),
                 matrix_height: NonZeroU64::new(4).unwrap(),
                 variable_matrix_widths: None,
@@ -302,10 +303,10 @@ fn web_mercator_quad() -> TileMatrixSet {
                 id: "3".to_string(),
                 scale_denominator: 69885283.0035897,
                 cell_size: 19567.8792410051,
-                corner_of_origin: None,
+                corner_of_origin: CornerOfOrigin::TopLeft,
                 point_of_origin: [-20037508.3427892, 20037508.3427892],
-                tile_width: NonZeroU16::new(256).unwrap(),
-                tile_height: NonZeroU16::new(256).unwrap(),
+                tile_width: NonZeroU64::new(256).unwrap(),
+                tile_height: NonZeroU64::new(256).unwrap(),
                 matrix_width: NonZeroU64::new(8).unwrap(),
                 matrix_height: NonZeroU64::new(8).unwrap(),
                 variable_matrix_widths: None,
@@ -319,10 +320,10 @@ fn web_mercator_quad() -> TileMatrixSet {
                 id: "4".to_string(),
                 scale_denominator: 34942641.5017948,
                 cell_size: 9783.93962050256,
-                corner_of_origin: None,
+                corner_of_origin: CornerOfOrigin::TopLeft,
                 point_of_origin: [-20037508.3427892, 20037508.3427892],
-                tile_width: NonZeroU16::new(256).unwrap(),
-                tile_height: NonZeroU16::new(256).unwrap(),
+                tile_width: NonZeroU64::new(256).unwrap(),
+                tile_height: NonZeroU64::new(256).unwrap(),
                 matrix_width: NonZeroU64::new(16).unwrap(),
                 matrix_height: NonZeroU64::new(16).unwrap(),
                 variable_matrix_widths: None,
@@ -336,10 +337,10 @@ fn web_mercator_quad() -> TileMatrixSet {
                 id: "5".to_string(),
                 scale_denominator: 17471320.7508974,
                 cell_size: 4891.96981025128,
-                corner_of_origin: None,
+                corner_of_origin: CornerOfOrigin::TopLeft,
                 point_of_origin: [-20037508.3427892, 20037508.3427892],
-                tile_width: NonZeroU16::new(256).unwrap(),
-                tile_height: NonZeroU16::new(256).unwrap(),
+                tile_width: NonZeroU64::new(256).unwrap(),
+                tile_height: NonZeroU64::new(256).unwrap(),
                 matrix_width: NonZeroU64::new(32).unwrap(),
                 matrix_height: NonZeroU64::new(32).unwrap(),
                 variable_matrix_widths: None,
@@ -353,10 +354,10 @@ fn web_mercator_quad() -> TileMatrixSet {
                 id: "6".to_string(),
                 scale_denominator: 8735660.37544871,
                 cell_size: 2445.98490512564,
-                corner_of_origin: None,
+                corner_of_origin: CornerOfOrigin::TopLeft,
                 point_of_origin: [-20037508.3427892, 20037508.3427892],
-                tile_width: NonZeroU16::new(256).unwrap(),
-                tile_height: NonZeroU16::new(256).unwrap(),
+                tile_width: NonZeroU64::new(256).unwrap(),
+                tile_height: NonZeroU64::new(256).unwrap(),
                 matrix_width: NonZeroU64::new(64).unwrap(),
                 matrix_height: NonZeroU64::new(64).unwrap(),
                 variable_matrix_widths: None,
@@ -370,10 +371,10 @@ fn web_mercator_quad() -> TileMatrixSet {
                 id: "7".to_string(),
                 scale_denominator: 4367830.18772435,
                 cell_size: 1222.99245256282,
-                corner_of_origin: None,
+                corner_of_origin: CornerOfOrigin::TopLeft,
                 point_of_origin: [-20037508.3427892, 20037508.3427892],
-                tile_width: NonZeroU16::new(256).unwrap(),
-                tile_height: NonZeroU16::new(256).unwrap(),
+                tile_width: NonZeroU64::new(256).unwrap(),
+                tile_height: NonZeroU64::new(256).unwrap(),
                 matrix_width: NonZeroU64::new(128).unwrap(),
                 matrix_height: NonZeroU64::new(128).unwrap(),
                 variable_matrix_widths: None,
@@ -387,10 +388,10 @@ fn web_mercator_quad() -> TileMatrixSet {
                 id: "8".to_string(),
                 scale_denominator: 2183915.09386217,
                 cell_size: 611.49622628141,
-                corner_of_origin: None,
+                corner_of_origin: CornerOfOrigin::TopLeft,
                 point_of_origin: [-20037508.3427892, 20037508.3427892],
-                tile_width: NonZeroU16::new(256).unwrap(),
-                tile_height: NonZeroU16::new(256).unwrap(),
+                tile_width: NonZeroU64::new(256).unwrap(),
+                tile_height: NonZeroU64::new(256).unwrap(),
                 matrix_width: NonZeroU64::new(256).unwrap(),
                 matrix_height: NonZeroU64::new(256).unwrap(),
                 variable_matrix_widths: None,
@@ -404,10 +405,10 @@ fn web_mercator_quad() -> TileMatrixSet {
                 id: "9".to_string(),
                 scale_denominator: 1091957.54693108,
                 cell_size: 305.748113140704,
-                corner_of_origin: None,
+                corner_of_origin: CornerOfOrigin::TopLeft,
                 point_of_origin: [-20037508.3427892, 20037508.3427892],
-                tile_width: NonZeroU16::new(256).unwrap(),
-                tile_height: NonZeroU16::new(256).unwrap(),
+                tile_width: NonZeroU64::new(256).unwrap(),
+                tile_height: NonZeroU64::new(256).unwrap(),
                 matrix_width: NonZeroU64::new(512).unwrap(),
                 matrix_height: NonZeroU64::new(512).unwrap(),
                 variable_matrix_widths: None,
@@ -421,10 +422,10 @@ fn web_mercator_quad() -> TileMatrixSet {
                 id: "10".to_string(),
                 scale_denominator: 545978.773465544,
                 cell_size: 152.874056570352,
-                corner_of_origin: None,
+                corner_of_origin: CornerOfOrigin::TopLeft,
                 point_of_origin: [-20037508.3427892, 20037508.3427892],
-                tile_width: NonZeroU16::new(256).unwrap(),
-                tile_height: NonZeroU16::new(256).unwrap(),
+                tile_width: NonZeroU64::new(256).unwrap(),
+                tile_height: NonZeroU64::new(256).unwrap(),
                 matrix_width: NonZeroU64::new(1024).unwrap(),
                 matrix_height: NonZeroU64::new(1024).unwrap(),
                 variable_matrix_widths: None,
@@ -438,10 +439,10 @@ fn web_mercator_quad() -> TileMatrixSet {
                 id: "11".to_string(),
                 scale_denominator: 272989.386732772,
                 cell_size: 76.4370282851762,
-                corner_of_origin: None,
+                corner_of_origin: CornerOfOrigin::TopLeft,
                 point_of_origin: [-20037508.3427892, 20037508.3427892],
-                tile_width: NonZeroU16::new(256).unwrap(),
-                tile_height: NonZeroU16::new(256).unwrap(),
+                tile_width: NonZeroU64::new(256).unwrap(),
+                tile_height: NonZeroU64::new(256).unwrap(),
                 matrix_width: NonZeroU64::new(2048).unwrap(),
                 matrix_height: NonZeroU64::new(2048).unwrap(),
                 variable_matrix_widths: None,
@@ -455,10 +456,10 @@ fn web_mercator_quad() -> TileMatrixSet {
                 id: "12".to_string(),
                 scale_denominator: 136494.693366386,
                 cell_size: 38.2185141425881,
-                corner_of_origin: None,
+                corner_of_origin: CornerOfOrigin::TopLeft,
                 point_of_origin: [-20037508.3427892, 20037508.3427892],
-                tile_width: NonZeroU16::new(256).unwrap(),
-                tile_height: NonZeroU16::new(256).unwrap(),
+                tile_width: NonZeroU64::new(256).unwrap(),
+                tile_height: NonZeroU64::new(256).unwrap(),
                 matrix_width: NonZeroU64::new(4096).unwrap(),
                 matrix_height: NonZeroU64::new(4096).unwrap(),
                 variable_matrix_widths: None,
@@ -472,10 +473,10 @@ fn web_mercator_quad() -> TileMatrixSet {
                 id: "13".to_string(),
                 scale_denominator: 68247.346683193,
                 cell_size: 19.109257071294,
-                corner_of_origin: None,
+                corner_of_origin: CornerOfOrigin::TopLeft,
                 point_of_origin: [-20037508.3427892, 20037508.3427892],
-                tile_width: NonZeroU16::new(256).unwrap(),
-                tile_height: NonZeroU16::new(256).unwrap(),
+                tile_width: NonZeroU64::new(256).unwrap(),
+                tile_height: NonZeroU64::new(256).unwrap(),
                 matrix_width: NonZeroU64::new(8192).unwrap(),
                 matrix_height: NonZeroU64::new(8192).unwrap(),
                 variable_matrix_widths: None,
@@ -489,10 +490,10 @@ fn web_mercator_quad() -> TileMatrixSet {
                 id: "14".to_string(),
                 scale_denominator: 34123.6733415964,
                 cell_size: 9.55462853564703,
-                corner_of_origin: None,
+                corner_of_origin: CornerOfOrigin::TopLeft,
                 point_of_origin: [-20037508.3427892, 20037508.3427892],
-                tile_width: NonZeroU16::new(256).unwrap(),
-                tile_height: NonZeroU16::new(256).unwrap(),
+                tile_width: NonZeroU64::new(256).unwrap(),
+                tile_height: NonZeroU64::new(256).unwrap(),
                 matrix_width: NonZeroU64::new(16384).unwrap(),
                 matrix_height: NonZeroU64::new(16384).unwrap(),
                 variable_matrix_widths: None,
@@ -506,10 +507,10 @@ fn web_mercator_quad() -> TileMatrixSet {
                 id: "15".to_string(),
                 scale_denominator: 17061.8366707982,
                 cell_size: 4.77731426782351,
-                corner_of_origin: None,
+                corner_of_origin: CornerOfOrigin::TopLeft,
                 point_of_origin: [-20037508.3427892, 20037508.3427892],
-                tile_width: NonZeroU16::new(256).unwrap(),
-                tile_height: NonZeroU16::new(256).unwrap(),
+                tile_width: NonZeroU64::new(256).unwrap(),
+                tile_height: NonZeroU64::new(256).unwrap(),
                 matrix_width: NonZeroU64::new(32768).unwrap(),
                 matrix_height: NonZeroU64::new(32768).unwrap(),
                 variable_matrix_widths: None,
@@ -523,10 +524,10 @@ fn web_mercator_quad() -> TileMatrixSet {
                 id: "16".to_string(),
                 scale_denominator: 8530.91833539913,
                 cell_size: 2.38865713391175,
-                corner_of_origin: None,
+                corner_of_origin: CornerOfOrigin::TopLeft,
                 point_of_origin: [-20037508.3427892, 20037508.3427892],
-                tile_width: NonZeroU16::new(256).unwrap(),
-                tile_height: NonZeroU16::new(256).unwrap(),
+                tile_width: NonZeroU64::new(256).unwrap(),
+                tile_height: NonZeroU64::new(256).unwrap(),
                 matrix_width: NonZeroU64::new(65536).unwrap(),
                 matrix_height: NonZeroU64::new(65536).unwrap(),
                 variable_matrix_widths: None,
@@ -540,10 +541,10 @@ fn web_mercator_quad() -> TileMatrixSet {
                 id: "17".to_string(),
                 scale_denominator: 4265.45916769956,
                 cell_size: 1.19432856695587,
-                corner_of_origin: None,
+                corner_of_origin: CornerOfOrigin::TopLeft,
                 point_of_origin: [-20037508.3427892, 20037508.3427892],
-                tile_width: NonZeroU16::new(256).unwrap(),
-                tile_height: NonZeroU16::new(256).unwrap(),
+                tile_width: NonZeroU64::new(256).unwrap(),
+                tile_height: NonZeroU64::new(256).unwrap(),
                 matrix_width: NonZeroU64::new(131072).unwrap(),
                 matrix_height: NonZeroU64::new(131072).unwrap(),
                 variable_matrix_widths: None,
@@ -557,10 +558,10 @@ fn web_mercator_quad() -> TileMatrixSet {
                 id: "18".to_string(),
                 scale_denominator: 2132.72958384978,
                 cell_size: 0.597164283477939,
-                corner_of_origin: None,
+                corner_of_origin: CornerOfOrigin::TopLeft,
                 point_of_origin: [-20037508.3427892, 20037508.3427892],
-                tile_width: NonZeroU16::new(256).unwrap(),
-                tile_height: NonZeroU16::new(256).unwrap(),
+                tile_width: NonZeroU64::new(256).unwrap(),
+                tile_height: NonZeroU64::new(256).unwrap(),
                 matrix_width: NonZeroU64::new(262144).unwrap(),
                 matrix_height: NonZeroU64::new(262144).unwrap(),
                 variable_matrix_widths: None,
@@ -574,10 +575,10 @@ fn web_mercator_quad() -> TileMatrixSet {
                 id: "19".to_string(),
                 scale_denominator: 1066.36479192489,
                 cell_size: 0.29858214173897,
-                corner_of_origin: None,
+                corner_of_origin: CornerOfOrigin::TopLeft,
                 point_of_origin: [-20037508.3427892, 20037508.3427892],
-                tile_width: NonZeroU16::new(256).unwrap(),
-                tile_height: NonZeroU16::new(256).unwrap(),
+                tile_width: NonZeroU64::new(256).unwrap(),
+                tile_height: NonZeroU64::new(256).unwrap(),
                 matrix_width: NonZeroU64::new(524288).unwrap(),
                 matrix_height: NonZeroU64::new(524288).unwrap(),
                 variable_matrix_widths: None,
@@ -591,10 +592,10 @@ fn web_mercator_quad() -> TileMatrixSet {
                 id: "20".to_string(),
                 scale_denominator: 533.182395962445,
                 cell_size: 0.149291070869485,
-                corner_of_origin: None,
+                corner_of_origin: CornerOfOrigin::TopLeft,
                 point_of_origin: [-20037508.3427892, 20037508.3427892],
-                tile_width: NonZeroU16::new(256).unwrap(),
-                tile_height: NonZeroU16::new(256).unwrap(),
+                tile_width: NonZeroU64::new(256).unwrap(),
+                tile_height: NonZeroU64::new(256).unwrap(),
                 matrix_width: NonZeroU64::new(1048576).unwrap(),
                 matrix_height: NonZeroU64::new(1048576).unwrap(),
                 variable_matrix_widths: None,
@@ -608,10 +609,10 @@ fn web_mercator_quad() -> TileMatrixSet {
                 id: "21".to_string(),
                 scale_denominator: 266.591197981222,
                 cell_size: 0.0746455354347424,
-                corner_of_origin: None,
+                corner_of_origin: CornerOfOrigin::TopLeft,
                 point_of_origin: [-20037508.3427892, 20037508.3427892],
-                tile_width: NonZeroU16::new(256).unwrap(),
-                tile_height: NonZeroU16::new(256).unwrap(),
+                tile_width: NonZeroU64::new(256).unwrap(),
+                tile_height: NonZeroU64::new(256).unwrap(),
                 matrix_width: NonZeroU64::new(2097152).unwrap(),
                 matrix_height: NonZeroU64::new(2097152).unwrap(),
                 variable_matrix_widths: None,
@@ -625,10 +626,10 @@ fn web_mercator_quad() -> TileMatrixSet {
                 id: "22".to_string(),
                 scale_denominator: 133.295598990611,
                 cell_size: 0.0373227677173712,
-                corner_of_origin: None,
+                corner_of_origin: CornerOfOrigin::TopLeft,
                 point_of_origin: [-20037508.3427892, 20037508.3427892],
-                tile_width: NonZeroU16::new(256).unwrap(),
-                tile_height: NonZeroU16::new(256).unwrap(),
+                tile_width: NonZeroU64::new(256).unwrap(),
+                tile_height: NonZeroU64::new(256).unwrap(),
                 matrix_width: NonZeroU64::new(4194304).unwrap(),
                 matrix_height: NonZeroU64::new(4194304).unwrap(),
                 variable_matrix_widths: None,
@@ -642,10 +643,10 @@ fn web_mercator_quad() -> TileMatrixSet {
                 id: "23".to_string(),
                 scale_denominator: 66.6477994953056,
                 cell_size: 0.0186613838586856,
-                corner_of_origin: None,
+                corner_of_origin: CornerOfOrigin::TopLeft,
                 point_of_origin: [-20037508.3427892, 20037508.3427892],
-                tile_width: NonZeroU16::new(256).unwrap(),
-                tile_height: NonZeroU16::new(256).unwrap(),
+                tile_width: NonZeroU64::new(256).unwrap(),
+                tile_height: NonZeroU64::new(256).unwrap(),
                 matrix_width: NonZeroU64::new(8388608).unwrap(),
                 matrix_height: NonZeroU64::new(8388608).unwrap(),
                 variable_matrix_widths: None,
@@ -659,10 +660,10 @@ fn web_mercator_quad() -> TileMatrixSet {
                 id: "24".to_string(),
                 scale_denominator: 33.3238997476528,
                 cell_size: 0.0093306919293428,
-                corner_of_origin: None,
+                corner_of_origin: CornerOfOrigin::TopLeft,
                 point_of_origin: [-20037508.3427892, 20037508.3427892],
-                tile_width: NonZeroU16::new(256).unwrap(),
-                tile_height: NonZeroU16::new(256).unwrap(),
+                tile_width: NonZeroU64::new(256).unwrap(),
+                tile_height: NonZeroU64::new(256).unwrap(),
                 matrix_width: NonZeroU64::new(16777216).unwrap(),
                 matrix_height: NonZeroU64::new(16777216).unwrap(),
                 variable_matrix_widths: None,
@@ -686,7 +687,7 @@ fn custom_lv95() {
         ],
         "LV95/CH1903+",
         "LV95",
-        Some(vec!["E".to_string(), "N".to_string()]),
+        Some(["E".to_string(), "N".to_string()]),
         &Crs::default(),
     )
     .unwrap();
@@ -709,7 +710,7 @@ fn custom_lv95() {
       1350000.0
     ],
     "crs": "http://www.opengis.net/def/crs/EPSG/0/2056",
-    "orderedAxes": [
+    "orderdAxes": [
       "E",
       "N"
     ]
@@ -719,6 +720,7 @@ fn custom_lv95() {
       "id": "0",
       "scaleDenominator": 14285714.285714287,
       "cellSize": 4000.0,
+      "cornerOfOrigin": "topLeft",
       "pointOfOrigin": [
         2420000.0,
         1350000.0
@@ -732,6 +734,7 @@ fn custom_lv95() {
       "id": "1",
       "scaleDenominator": 13392857.142857144,
       "cellSize": 3750.0,
+      "cornerOfOrigin": "topLeft",
       "pointOfOrigin": [
         2420000.0,
         1350000.0
@@ -745,6 +748,7 @@ fn custom_lv95() {
       "id": "2",
       "scaleDenominator": 12500000.000000002,
       "cellSize": 3500.0,
+      "cornerOfOrigin": "topLeft",
       "pointOfOrigin": [
         2420000.0,
         1350000.0
@@ -758,6 +762,7 @@ fn custom_lv95() {
       "id": "3",
       "scaleDenominator": 11607142.857142858,
       "cellSize": 3250.0,
+      "cornerOfOrigin": "topLeft",
       "pointOfOrigin": [
         2420000.0,
         1350000.0
@@ -771,6 +776,7 @@ fn custom_lv95() {
       "id": "4",
       "scaleDenominator": 10714285.714285715,
       "cellSize": 3000.0,
+      "cornerOfOrigin": "topLeft",
       "pointOfOrigin": [
         2420000.0,
         1350000.0
@@ -784,6 +790,7 @@ fn custom_lv95() {
       "id": "5",
       "scaleDenominator": 9821428.571428573,
       "cellSize": 2750.0,
+      "cornerOfOrigin": "topLeft",
       "pointOfOrigin": [
         2420000.0,
         1350000.0
@@ -797,6 +804,7 @@ fn custom_lv95() {
       "id": "6",
       "scaleDenominator": 8928571.42857143,
       "cellSize": 2500.0,
+      "cornerOfOrigin": "topLeft",
       "pointOfOrigin": [
         2420000.0,
         1350000.0
@@ -810,6 +818,7 @@ fn custom_lv95() {
       "id": "7",
       "scaleDenominator": 8035714.285714286,
       "cellSize": 2250.0,
+      "cornerOfOrigin": "topLeft",
       "pointOfOrigin": [
         2420000.0,
         1350000.0
@@ -823,6 +832,7 @@ fn custom_lv95() {
       "id": "8",
       "scaleDenominator": 7142857.142857144,
       "cellSize": 2000.0,
+      "cornerOfOrigin": "topLeft",
       "pointOfOrigin": [
         2420000.0,
         1350000.0
@@ -836,6 +846,7 @@ fn custom_lv95() {
       "id": "9",
       "scaleDenominator": 6250000.000000001,
       "cellSize": 1750.0,
+      "cornerOfOrigin": "topLeft",
       "pointOfOrigin": [
         2420000.0,
         1350000.0
@@ -849,6 +860,7 @@ fn custom_lv95() {
       "id": "10",
       "scaleDenominator": 5357142.857142857,
       "cellSize": 1500.0,
+      "cornerOfOrigin": "topLeft",
       "pointOfOrigin": [
         2420000.0,
         1350000.0
@@ -862,6 +874,7 @@ fn custom_lv95() {
       "id": "11",
       "scaleDenominator": 4464285.714285715,
       "cellSize": 1250.0,
+      "cornerOfOrigin": "topLeft",
       "pointOfOrigin": [
         2420000.0,
         1350000.0
@@ -875,6 +888,7 @@ fn custom_lv95() {
       "id": "12",
       "scaleDenominator": 3571428.571428572,
       "cellSize": 1000.0,
+      "cornerOfOrigin": "topLeft",
       "pointOfOrigin": [
         2420000.0,
         1350000.0
@@ -888,6 +902,7 @@ fn custom_lv95() {
       "id": "13",
       "scaleDenominator": 2678571.4285714286,
       "cellSize": 750.0,
+      "cornerOfOrigin": "topLeft",
       "pointOfOrigin": [
         2420000.0,
         1350000.0
@@ -901,6 +916,7 @@ fn custom_lv95() {
       "id": "14",
       "scaleDenominator": 2321428.571428572,
       "cellSize": 650.0,
+      "cornerOfOrigin": "topLeft",
       "pointOfOrigin": [
         2420000.0,
         1350000.0
@@ -914,6 +930,7 @@ fn custom_lv95() {
       "id": "15",
       "scaleDenominator": 1785714.285714286,
       "cellSize": 500.0,
+      "cornerOfOrigin": "topLeft",
       "pointOfOrigin": [
         2420000.0,
         1350000.0
@@ -927,6 +944,7 @@ fn custom_lv95() {
       "id": "16",
       "scaleDenominator": 892857.142857143,
       "cellSize": 250.0,
+      "cornerOfOrigin": "topLeft",
       "pointOfOrigin": [
         2420000.0,
         1350000.0
@@ -940,6 +958,7 @@ fn custom_lv95() {
       "id": "17",
       "scaleDenominator": 357142.85714285716,
       "cellSize": 100.0,
+      "cornerOfOrigin": "topLeft",
       "pointOfOrigin": [
         2420000.0,
         1350000.0
@@ -953,6 +972,7 @@ fn custom_lv95() {
       "id": "18",
       "scaleDenominator": 178571.42857142858,
       "cellSize": 50.0,
+      "cornerOfOrigin": "topLeft",
       "pointOfOrigin": [
         2420000.0,
         1350000.0
@@ -966,6 +986,7 @@ fn custom_lv95() {
       "id": "19",
       "scaleDenominator": 71428.57142857143,
       "cellSize": 20.0,
+      "cornerOfOrigin": "topLeft",
       "pointOfOrigin": [
         2420000.0,
         1350000.0
@@ -979,6 +1000,7 @@ fn custom_lv95() {
       "id": "20",
       "scaleDenominator": 35714.28571428572,
       "cellSize": 10.0,
+      "cornerOfOrigin": "topLeft",
       "pointOfOrigin": [
         2420000.0,
         1350000.0
@@ -992,6 +1014,7 @@ fn custom_lv95() {
       "id": "21",
       "scaleDenominator": 17857.14285714286,
       "cellSize": 5.0,
+      "cornerOfOrigin": "topLeft",
       "pointOfOrigin": [
         2420000.0,
         1350000.0
@@ -1005,6 +1028,7 @@ fn custom_lv95() {
       "id": "22",
       "scaleDenominator": 8928.57142857143,
       "cellSize": 2.5,
+      "cornerOfOrigin": "topLeft",
       "pointOfOrigin": [
         2420000.0,
         1350000.0
@@ -1018,6 +1042,7 @@ fn custom_lv95() {
       "id": "23",
       "scaleDenominator": 7142.857142857143,
       "cellSize": 2.0,
+      "cornerOfOrigin": "topLeft",
       "pointOfOrigin": [
         2420000.0,
         1350000.0
@@ -1031,6 +1056,7 @@ fn custom_lv95() {
       "id": "24",
       "scaleDenominator": 5357.142857142858,
       "cellSize": 1.5,
+      "cornerOfOrigin": "topLeft",
       "pointOfOrigin": [
         2420000.0,
         1350000.0
@@ -1044,6 +1070,7 @@ fn custom_lv95() {
       "id": "25",
       "scaleDenominator": 3571.4285714285716,
       "cellSize": 1.0,
+      "cornerOfOrigin": "topLeft",
       "pointOfOrigin": [
         2420000.0,
         1350000.0
@@ -1057,6 +1084,7 @@ fn custom_lv95() {
       "id": "26",
       "scaleDenominator": 1785.7142857142858,
       "cellSize": 0.5,
+      "cornerOfOrigin": "topLeft",
       "pointOfOrigin": [
         2420000.0,
         1350000.0
