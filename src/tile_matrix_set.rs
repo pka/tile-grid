@@ -23,7 +23,7 @@ impl TileMatrixSetOps for TileMatrixSet {
         TileMatrixSet::from_json(&content)
     }
     fn from_json(json: &str) -> Result<Self, TileMatrixSetError> {
-        serde_json::from_str(&json).map_err(Into::into)
+        serde_json::from_str(json).map_err(Into::into)
     }
     /// Check if CRS has inverted AXIS (lat,lon) instead of (lon,lat).
     fn crs_axis_inverted(&self) -> bool {
