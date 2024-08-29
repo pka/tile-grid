@@ -203,7 +203,7 @@ fn morecantile_examples() {
 
     // Or using coordinates in input CRS
     let coord = tms.xy(159.31, -42.0).unwrap();
-    if cfg!(projtransform) {
+    if cfg!(feature = "projtransform") {
         assert_eq!((coord.x, coord.y), (17734308.078276414, -5160979.444049783));
     } else {
         //assert_eq!((coord.x, coord.y), (17734308.078276414, -5160979.444049781));
