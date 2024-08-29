@@ -1,3 +1,4 @@
+use crate::hilbert::HilbertIterator;
 use crate::quadkey::check_quadkey_support;
 use crate::tile::{BoundingBox, Coords, Xyz};
 use crate::tile_matrix_set::{ordered_axes_inverted, TileMatrixSetOps};
@@ -821,6 +822,11 @@ impl Tms {
     pub fn xyz_iterator(&self, extend: &BoundingBox, minzoom: u8, maxzoom: u8) -> XyzIterator {
         let limits = self.extent_limits_xy(extend, minzoom, maxzoom);
         XyzIterator::new(minzoom, maxzoom, limits)
+    }
+
+    /// Get hilbert iterator over all tiles
+    pub fn hilbert_iterator(&self, minzoom: u8, maxzoom: u8) -> HilbertIterator {
+        HilbertIterator::new(minzoom, maxzoom)
     }
 
     // def feature(
