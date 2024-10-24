@@ -1,5 +1,7 @@
 #![allow(clippy::unreadable_literal)]
 
+use crate::tms_iterator::TileIterator;
+
 // From https://github.com/stadiamaps/pmtiles-rs/blob/b5a9f82/src/tile.rs (Apache/MIT)
 
 const PYRAMID_SIZE_BY_ZOOM: [u64; 21] = [
@@ -152,6 +154,8 @@ impl Iterator for HilbertIterator {
         Some(current)
     }
 }
+
+impl TileIterator for HilbertIterator {}
 
 #[cfg(test)]
 mod test_tms {
