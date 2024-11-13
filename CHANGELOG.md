@@ -1,3 +1,8 @@
+## 0.6.2
+
+* Add iterator in Hilbert order
+* Introduce `TileIterator` trait
+
 ## 0.6.1
 
 * Use structs from ogcapi-types

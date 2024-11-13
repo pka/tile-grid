@@ -7,6 +7,8 @@
 
 use crate::{MinMax, Xyz};
 
+pub trait TileIterator: Iterator<Item = Xyz> {}
+
 /// Level-by-level iterator
 pub struct XyzIterator {
     z: u8,
@@ -76,6 +78,8 @@ impl Iterator for XyzIterator {
         Some(current)
     }
 }
+
+impl TileIterator for XyzIterator {}
 
 #[cfg(test)]
 mod test {

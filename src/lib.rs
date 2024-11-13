@@ -40,6 +40,7 @@
 //! assert_eq!(tile, Xyz::new(15, 10, 4));
 //! ```
 
+mod hilbert;
 mod quadkey;
 mod registry;
 mod tile;
